@@ -7,6 +7,19 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <!-- Script de segurança -->
+  <script>
+    function goBack() {
+      // Se houver histórico, volta. Se não houver, vai para home
+      if (document.referrer && history.length > 1) {
+        history.back();
+      } else {
+        window.location.href = "home.html";
+      }
+    }
+  </script>
+
   <!-- Header -->
   <header class="header">
     <div class="header-content">
@@ -23,7 +36,8 @@
     </div>
   </header>
 
-  <!-- Conteúdo -->
+  <script src="app.js"></script>
+
   <div class="page-container">
     <div class="page-content container-md">
       <h1 class="page-title">Configurações</h1>
@@ -34,7 +48,7 @@
         <div class="card-content">
           <div class="form-group">
             <label class="label">PIN Atual (4 dígitos):</label>
-            <input type="password" class="input" id="current-pin" placeholder="Digite seu PIN atual">
+            <input type="password" class="input" id="current-pin" placeholder="Digite seu PIN atual" maxlength="4">
           </div>
           
           <div class="form-group">
@@ -56,7 +70,7 @@
         <h3 class="card-title">Dados e Privacidade</h3>
         <div class="card-content">
           <p style="margin-bottom: 1rem; color: var(--muted-foreground);">
-            Todos os seus dados são salvos localmente no seu dispositivo e nunca são enviados para servidores externos.
+            Seus dados são salvos apenas no seu dispositivo.
           </p>
           
           <button class="btn btn-outline" onclick="exportData()" style="width: 100%; margin-bottom: 1rem;">
@@ -70,73 +84,56 @@
       </div>
 
       <!-- Sobre -->
-      <div class="card" style="margin-bottom: 2rem;">
+      <div class="card">
         <h3 class="card-title">Sobre</h3>
         <div class="card-content">
           <p><strong>Rosarium</strong></p>
           <p style="color: var(--muted-foreground); margin-bottom: 1rem;">v1.0.0</p>
-          
-          <p style="margin-bottom: 1rem;">
-            Um aplicativo de devoção católica para ajudá-lo em sua jornada espiritual.
-          </p>
-          
-          <p style="font-size: var(--font-size-sm); color: var(--muted-foreground);">
-            Desenvolvido com ❤️ para a comunidade católica
-          </p>
+          <p>Aplicativo católico para oração, estudos e devoção diária.</p>
         </div>
       </div>
 
-      <!-- Funcionalidades -->
-      <div class="card">
-        <h3 class="card-title">Funcionalidades</h3>
-        <div class="card-content">
-          <ul style="list-style: none; padding: 0;">
-            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Terço Mariano, Rosário e Terço da Misericórdia</li>
-            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Bíblia Católica com 73 livros</li>
-            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Liturgia Diária e Lectio Divina</li>
-            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Anotações Privadas com PIN</li>
-            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Santo do Dia</li>
-            <li style="padding: 0.5rem 0;">✓ Exame de Consciência para Confissão</li>
-          </ul>
-        </div>
-      </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
   <script>
+
+    // 🔐 CORREÇÃO COMPLETA DO PIN
     function changePin() {
-      const currentPin = document.getElementById('current-pin').value;
-      const newPin = document.getElementById('new-pin').value;
-      const confirmPin = document.getElementById('confirm-pin').value;
-      
+      const currentPin = document.getElementById('current-pin').value.trim();
+      const newPin = document.getElementById('new-pin').value.trim();
+      const confirmPin = document.getElementById('confirm-pin').value.trim();
+
       if (!currentPin || !newPin || !confirmPin) {
-        alert('Preencha todos os campos');
+        alert("Preencha todos os campos.");
         return;
       }
-      
+
       if (!PIN.verify(currentPin)) {
-        alert('PIN atual incorreto');
+        alert("PIN atual incorreto.");
         return;
       }
-      
-      if (newPin.length !== 4 || confirmPin.length !== 4) {
-        alert('O PIN deve ter 4 dígitos');
+
+      if (newPin.length !== 4 || confirmPin.length !== 4 || isNaN(newPin) || isNaN(confirmPin)) {
+        alert("O PIN deve ter 4 números.");
         return;
       }
-      
+
       if (newPin !== confirmPin) {
-        alert('Os PINs não conferem');
+        alert("Os PINs não coincidem.");
         return;
       }
-      
-      PIN.setPin(newPin);
-      alert('PIN alterado com sucesso!');
-      
-      document.getElementById('current-pin').value = '';
-      document.getElementById('new-pin').value = '';
-      document.getElementById('confirm-pin').value = '';
+
+      // salva como string garantida
+      PIN.setPin(String(newPin));
+
+      alert("PIN alterado com sucesso!");
+
+      document.getElementById('current-pin').value = "";
+      document.getElementById('new-pin').value = "";
+      document.getElementById('confirm-pin').value = "";
     }
+
 
     function exportData() {
       const data = {
@@ -147,31 +144,26 @@
       };
       
       const dataStr = JSON.stringify(data, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const link = document.createElement('a');
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
       link.href = url;
-      link.download = `misericordia-dados-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = "rosarium-dados.json";
       link.click();
-      
+
       URL.revokeObjectURL(url);
-      alert('Dados exportados com sucesso!');
     }
 
+
     function clearAllData() {
-      if (!confirm('Tem certeza? Todos os dados serão perdidos permanentemente.')) {
-        return;
-      }
-      
-      if (!confirm('ÚLTIMA CONFIRMAÇÃO: Deseja realmente limpar todos os dados?')) {
-        return;
-      }
-      
+      if (!confirm("Deseja realmente apagar todos os dados?")) return;
       localStorage.clear();
-      alert('Todos os dados foram limpos.');
-      window.location.href = 'home.html';
+      alert("Dados apagados.");
+      window.location.href = "home.html";
     }
+
   </script>
+
 </body>
 </html>

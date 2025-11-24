@@ -1,233 +1,285 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Terço Mariano - Rosarium</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Pequeno ajuste local para garantir que o layout fique igual ao Manus */
+    .card { background: var(--bg-card, #fff); border-radius:12px; padding:1rem; box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,0.06)); }
+    .terco-counter { text-align:center; padding:1rem 0; }
+    .counter-display { font-size:2rem; font-weight:700; color:var(--text-dark,#121212); }
+    .beads-container { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:1rem 0; }
+    .bead { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background: #f3f3f3; color: #4d3e43; cursor:pointer; user-select:none; font-weight:600; }
+    .bead.filled { background: var(--primary,#4360C6); color:#fff; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+    .progress-bar { height:8px; background:#eee; border-radius:999px; overflow:hidden; margin:0.5rem 1.5rem; }
+    .progress-fill { height:100%; width:0%; background:var(--primary,#4360C6); transition:width .25s ease; }
+    .counter-buttons { display:flex; gap:0.6rem; justify-content:center; margin-top:1rem; flex-wrap:wrap; }
+    .btn { padding:10px 14px; border-radius:10px; background:var(--primary,#4360C6); color:#fff; border:none; cursor:pointer; }
+    .btn-outline { background: transparent; color:var(--text-dark,#121212); border:1px solid #ddd; }
+    .btn-secondary { background:#fff; color:var(--text-dark,#121212); border:1px solid #eee; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-block;}
+    .misterio-box { background:#eef6ff; border-left:4px solid var(--primary,#4360C6); padding:0.8rem; border-radius:8px; margin-bottom:1rem; }
+    .small-muted { color:var(--muted-foreground,#666); font-size:0.95rem; }
+  </style>
 </head>
-
 <body>
-  <!-- Header -->
   <header class="header">
     <div class="header-content">
-      <button class="btn-back" onclick="goBack()">← Voltar</button>
-      <div class="header-title">
+      <button class="btn-back" onclick="history.back()">← Voltar</button>
+      <div class="header-title" style="display:inline-flex;align-items:center;gap:.6rem;margin-left:1rem;">
         <div class="header-logo">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
+          <!-- ícone - mantido -->
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
         </div>
-        <span>Terço Mariano</span>
+        <span style="font-weight:700;">Terço Mariano</span>
       </div>
     </div>
   </header>
 
-  <!-- Conteúdo -->
-  <div class="page-container">
-    <div class="page-content container-sm">
+  <main class="page-container">
+    <div class="page-content container-sm" style="max-width:760px;margin:1.25rem auto;">
 
-      <!-- Oração Atual -->
-      <div id="prayer-box" class="card" style="margin-bottom: 1rem;">
-        <h3 class="card-title">Oração</h3>
+      <!-- Oração atual -->
+      <div id="prayer-card" class="card" style="margin-bottom:1rem;">
+        <h3 class="card-title" style="margin:0 0 .5rem 0;">Oração atual</h3>
         <div class="card-content">
-          <p id="prayer-text" style="font-size: 1rem; line-height: 1.7;">
-            <!-- preenchido via JS -->
-          </p>
+          <p id="prayer-text" style="margin:0; font-size:1rem; line-height:1.6; color:var(--text-dark,#121212);">...</p>
+          <p id="prayer-sub" class="small-muted" style="margin-top:.6rem;"></p>
         </div>
       </div>
 
-      <!-- Mistério Atual (só aparece no Pai Nosso) -->
-      <div id="misterio-box" class="card" style="display: none; margin-bottom: 1.5rem;">
-        <h3 class="card-title">Mistério Atual</h3>
-        <div class="card-content">
-          <p id="misterio-text" style="font-size: 1rem; line-height: 1.7;"></p>
-        </div>
+      <!-- Caixa do Mistério (aparece apenas no Pai-Nosso) -->
+      <div id="misterio-card" class="misterio-box" style="display:none;">
+        <strong id="misterio-title" style="display:block;margin-bottom:.25rem;"></strong>
+        <div id="misterio-text" style="font-size:.98rem;color:var(--text-dark,#121212);"></div>
       </div>
 
-      <!-- Contador -->
-      <div class="terco-counter">
-        <div class="counter-display" id="counter">0</div>
-        <p class="counter-label">Progresso do Terço</p>
+      <!-- Contador / Bolinhas -->
+      <div class="terco-counter card" style="padding:1.2rem;">
+        <div class="counter-display" id="counter-display">0</div>
+        <p class="counter-label small-muted" style="margin:.2rem 0 1rem 0;">Etapa do terço</p>
 
-        <!-- Bolinhas -->
-        <div class="beads-container" id="beads-container"></div>
+        <div class="beads-container" id="beads-container" aria-hidden="false"></div>
 
-        <!-- Barra de Progresso -->
-        <div class="progress-bar">
-          <div class="progress-fill" id="progress-fill"></div>
+        <div class="progress-bar" aria-hidden="false">
+          <div id="progress-fill" class="progress-fill"></div>
         </div>
-        <p class="progress-label" id="progress-label">0%</p>
+        <p id="progress-label" class="small-muted" style="margin-top:.5rem;">0%</p>
 
-        <!-- Botões -->
-        <div class="counter-buttons">
-          <button class="btn" onclick="nextStep()">+ Próxima</button>
-          <button class="btn btn-outline" onclick="resetTerco()">Resetar</button>
-          <a href="calendario-terco.html" class="btn btn-secondary">Calendário</a>
+        <div class="counter-buttons" style="margin-top:1rem;">
+          <button class="btn" id="btn-next">+ Próxima</button>
+          <button class="btn btn-outline" id="btn-reset">Resetar</button>
+          <a href="calendario-terco.html" class="btn-secondary">Calendário</a>
         </div>
       </div>
 
     </div>
-  </div>
-
-  <script src="app.js"></script>
+  </main>
 
   <script>
-    /*
-     * ===============================
-     *  CONFIGURAÇÃO REAL DO TERÇO
-     * ===============================
-     */
+  // ======= DADOS (copiados/compatíveis com seu app.js) =======
+  const ORACOES = {
+    sinal_da_cruz: "Em nome do Pai, do Filho e do Espírito Santo. Amém.",
+    credo: "Creio em Deus Pai todo-poderoso, criador do céu e da terra; e em Jesus Cristo, seu único Filho, nosso Senhor, ... Amém.",
+    pai_nosso: "Pai nosso, que estais nos céus, santificado seja o vosso nome, venha a nós o vosso reino, ... Amém.",
+    ave_maria: "Ave Maria, cheia de graça, o Senhor é convosco, bendita sois vós entre as mulheres, ... Amém.",
+    gloria: "Glória seja ao Pai, e ao Filho, e ao Espírito Santo. Como era no princípio, agora e sempre, por todos os séculos dos séculos. Amém.",
+    jaculatoria: "Ó meu Jesus, perdoai-nos, livrai-nos do fogo do inferno, levai as almas todas ao céu..."
+  };
 
-    const PRAYERS = {
-      credo: "Creio em Deus Pai todo-poderoso, criador do céu e da terra... (completo aqui)",
-      paiNosso: "Pai nosso, que estais nos céus...",
-      aveMaria: "Ave Maria, cheia de graça...",
-      gloria: "Glória ao Pai, ao Filho e ao Espírito Santo...",
-      jaculatoria: "Ó meu Jesus, perdoai-nos..."
-    };
+  const MISTERIOS = {
+    gozosos: [
+      "1º Mistério Gozoso — Anunciação: O Anjo anuncia a Maria que será Mãe de Deus.",
+      "2º Mistério Gozoso — Visitação: Maria visita Isabel.",
+      "3º Mistério Gozoso — Nascimento: Jesus nasce em Belém.",
+      "4º Mistério Gozoso — Apresentação: Jesus no Templo.",
+      "5º Mistério Gozoso — Encontro no Templo."
+    ],
+    luminosos: [
+      "1º Mistério Luminoso — Batismo no Jordão.",
+      "2º Mistério Luminoso — Bodas de Caná.",
+      "3º Mistério Luminoso — Anúncio do Reino.",
+      "4º Mistério Luminoso — Transfiguração.",
+      "5º Mistério Luminoso — Instituição da Eucaristia."
+    ],
+    dolorosos: [
+      "1º Mistério Doloroso — Agonia no Horto.",
+      "2º Mistério Doloroso — Flagelação.",
+      "3º Mistério Doloroso — Coroação de Espinhos.",
+      "4º Mistério Doloroso — Caminho do Calvário.",
+      "5º Mistério Doloroso — Crucifixão."
+    ],
+    gloriosos: [
+      "1º Mistério Glorioso — Ressurreição.",
+      "2º Mistério Glorioso — Ascensão.",
+      "3º Mistério Glorioso — Pentecostes.",
+      "4º Mistério Glorioso — Assunção de Maria.",
+      "5º Mistério Glorioso — Coroação de Maria."
+    ]
+  };
 
-    // Mistérios completos — Categoria C (detalhado/catequético)
-    const MISTERIOS = {
-      gozosos: [
-        "1º Mistério Gozoso — A Anunciação: O Verbo se fez carne e habitou entre nós.",
-        "2º Mistério Gozoso — A Visitação: Maria visita Isabel e leva Cristo consigo.",
-        "3º Mistério Gozoso — O Nascimento de Jesus: Deus nasce entre nós.",
-        "4º Mistério Gozoso — A Apresentação: Jesus é apresentado no Templo.",
-        "5º Mistério Gozoso — O Encontro no Templo: Jesus é encontrado entre os doutores."
-      ],
-      luminosos: [
-        "1º Mistério Luminoso — O Batismo no Jordão...",
-        "2º Mistério Luminoso — As Bodas de Caná...",
-        "3º Mistério Luminoso — O Anúncio do Reino...",
-        "4º Mistério Luminoso — A Transfiguração...",
-        "5º Mistério Luminoso — A Instituição da Eucaristia..."
-      ],
-      dolorosos: [
-        "1º Mistério Doloroso — A Agonia no Horto...",
-        "2º Mistério Doloroso — A Flagelação...",
-        "3º Mistério Doloroso — A Coroação de Espinhos...",
-        "4º Mistério Doloroso — O Caminho do Calvário...",
-        "5º Mistério Doloroso — A Crucifixão..."
-      ],
-      gloriosos: [
-        "1º Mistério Glorioso — A Ressurreição...",
-        "2º Mistério Glorioso — A Ascensão...",
-        "3º Mistério Glorioso — Pentecostes...",
-        "4º Mistério Glorioso — A Assunção de Maria...",
-        "5º Mistério Glorioso — A Coroação de Maria..."
-      ]
-    };
+  function getNomeMisteriosDoDia() {
+    const dia = new Date().getDay();
+    if (dia === 1 || dia === 6) return {key:'gozosos', label:'Mistérios Gozosos'}; // seg+sab
+    if (dia === 2 || dia === 5) return {key:'dolorosos', label:'Mistérios Dolorosos'}; // ter+sex
+    if (dia === 4) return {key:'luminosos', label:'Mistérios Luminosos'}; // quinta
+    return {key:'gloriosos', label:'Mistérios Gloriosos'}; // dom+qua
+  }
 
-    function getMisteriosDoDia() {
-      const d = new Date().getDay();
-      if (d === 0 || d === 3) return MISTERIOS.gloriosos;
-      if (d === 1 || d === 6) return MISTERIOS.gozosos;
-      if (d === 2 || d === 5) return MISTERIOS.dolorosos;
-      return MISTERIOS.luminosos; // quinta
+  // ======= SEQUÊNCIA (etapas) =======
+  // Usamos uma sequência de "etapas" onde cada elemento tem um tipo:
+  // 'credo', 'pn' (Pai-Nosso), 'am' (Ave-Maria), 'gl' (Glória)
+  // Nas etapas 'pn' mostramos a caixa de Mistério (com índice de PN atual).
+  const SEQUENCE = (function buildSequence(){
+    const seq = [];
+    // Abertura
+    seq.push('credo');      // 0
+    seq.push('pn');         // 1 (PN inicial) -> mostra Mistério 0 (abre)
+    seq.push('am','am','am'); // 2,3,4 (3 Ave-Marias iniciais)
+    seq.push('gl');         // 5
+    // 5 dezenas completas
+    for (let d=0; d<5; d++) {
+      seq.push('pn');      // Pai-Nosso da dezena -> mostra mistério d
+      for (let i=0;i<10;i++) seq.push('am'); // 10 Ave-Marias
+      seq.push('gl');
+    }
+    return seq;
+  })();
+
+  const STORAGE_KEY = 'rosarium_terco_mariano_v1';
+
+  // ======= ESTADO =======
+  let state = {
+    stepIndex: 0,    // posição na SEQUENCE
+    pnCount: 0,      // quantos Pai-Nossos já passados (usado para indexar mistérios)
+    amCount: 0       // número de Ave-Marias contadas (0..53)
+  };
+
+  // ======= HELPERS =======
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        state = Object.assign(state, s);
+      }
+    } catch(e){ console.warn('loadState err',e); }
+  }
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){ console.warn(e); }
+  }
+
+  // ======= RENDER =======
+  function render() {
+    const step = SEQUENCE[state.stepIndex];
+    const prayerTextEl = document.getElementById('prayer-text');
+    const prayerSubEl = document.getElementById('prayer-sub');
+    const misterioCard = document.getElementById('misterio-card');
+    const misterioTitle = document.getElementById('misterio-title');
+    const misterioText = document.getElementById('misterio-text');
+
+    // Default hide misterio
+    misterioCard.style.display = 'none';
+    misterioTitle.innerText = '';
+    misterioText.innerText = '';
+
+    if (step === 'credo') {
+      prayerTextEl.innerText = ORACOES.credo;
+      prayerSubEl.innerText = 'Creio';
+    } else if (step === 'pn') {
+      prayerTextEl.innerText = ORACOES.pai_nosso;
+      prayerSubEl.innerText = 'Pai-Nosso';
+      // show mystery corresponding to current pnCount (0-based)
+      const misterioInfo = getNomeMisteriosDoDia();
+      const arr = MISTERIOS[misterioInfo.key];
+      const idx = Math.min(state.pnCount, arr.length-1);
+      misterioCard.style.display = 'block';
+      misterioTitle.innerText = `${misterioInfo.label} — ${idx+1}º`;
+      misterioText.innerText = arr[idx];
+    } else if (step === 'am') {
+      prayerTextEl.innerText = ORACOES.ave_maria;
+      prayerSubEl.innerText = 'Ave-Maria';
+    } else if (step === 'gl') {
+      prayerTextEl.innerText = ORACOES.gloria;
+      prayerSubEl.innerText = 'Glória';
+    } else {
+      prayerTextEl.innerText = '';
+      prayerSubEl.innerText = '';
     }
 
-    // ORDEM REAL DO TERÇO (1 CREEDO, 1 PN, 3 AM, 1 GLÓRIA, 5 MISTÉRIOS)
-    const SEQUENCE = [
-      "credo",
-      "pn",
-      "am", "am", "am",
-      "gloria",
+    // counter: show "Etapa X de Y"
+    document.getElementById('counter-display').innerText = `${state.stepIndex + 1} / ${SEQUENCE.length}`;
 
-      // Mistério 1
-      "pn", "m1",
-      "am","am","am","am","am","am","am","am","am","am",
-      "gloria",
-
-      // Mistério 2
-      "pn", "m2",
-      "am","am","am","am","am","am","am","am","am","am",
-      "gloria",
-
-      // Mistério 3
-      "pn", "m3",
-      "am","am","am","am","am","am","am","am","am","am",
-      "gloria",
-
-      // Mistério 4
-      "pn", "m4",
-      "am","am","am","am","am","am","am","am","am","am",
-      "gloria",
-
-      // Mistério 5
-      "pn", "m5",
-      "am","am","am","am","am","am","am","am","am","am",
-      "gloria"
-    ];
-
-    let step = 0;
-    let misteriosHoje = getMisteriosDoDia();
-
-    function updateUI() {
-      const elemPrayer = document.getElementById("prayer-text");
-      const elemMist = document.getElementById("misterio-box");
-      const mistText = document.getElementById("misterio-text");
-
-      const item = SEQUENCE[step];
-
-      // Oração
-      if (item === "credo") elemPrayer.innerText = PRAYERS.credo;
-      else if (item === "pn") elemPrayer.innerText = PRAYERS.paiNosso;
-      else if (item === "am") elemPrayer.innerText = PRAYERS.aveMaria;
-      else if (item === "gloria") elemPrayer.innerText = PRAYERS.gloria;
-      else if (item.startsWith("m")) {
-        elemPrayer.innerText = ""; // o mistério substitui
-      }
-
-      // Mistério
-      if (item.startsWith("m")) {
-        const index = Number(item.replace("m","")) - 1;
-        mistText.innerText = misteriosHoje[index];
-        elemMist.style.display = "block";
-      } else {
-        elemMist.style.display = "none";
-      }
-
-      // Atualiza beads e barra
-      document.getElementById("counter").innerText = step + 1;
-      const percent = ((step+1) / SEQUENCE.length) * 100;
-      document.getElementById("progress-fill").style.width = percent + "%";
-      document.getElementById("progress-label").innerText = Math.round(percent) + "%";
-    }
-
-    function nextStep() {
-      if (step < SEQUENCE.length - 1) {
-        step++;
-        updateUI();
-      } else {
-        alert("Terço completo!");
-      }
-    }
-
-    function resetTerco() {
-      if (confirm("Deseja resetar o terço?")) {
-        step = 0;
-        updateUI();
-      }
-    }
-
-    function initBeads() {
-      const container = document.getElementById("beads-container");
-      container.innerHTML = "";
-      for (let i = 1; i <= SEQUENCE.length; i++) {
-        const bead = document.createElement("div");
-        bead.className = "bead";
-        bead.textContent = i;
-        container.appendChild(bead);
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      initBeads();
-      updateUI();
+    // beads
+    const beadsContainer = document.getElementById('beads-container');
+    beadsContainer.innerHTML = '';
+    SEQUENCE.forEach((item, idx) => {
+      const bead = document.createElement('div');
+      bead.className = 'bead' + (idx <= state.stepIndex ? ' filled' : '');
+      bead.textContent = idx+1;
+      bead.title = item.toUpperCase();
+      bead.onclick = () => { jumpTo(idx); };
+      beadsContainer.appendChild(bead);
     });
-  </script>
 
+    // progress (based on stepIndex)
+    const pct = Math.round(((state.stepIndex+1) / SEQUENCE.length) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-label').innerText = pct + '%';
+  }
+
+  // ======= CONTROLE (próxima / reset / pular) =======
+  function nextStep() {
+    if (state.stepIndex >= SEQUENCE.length - 1) {
+      alert('Terço completo — glória a Deus!');
+      return;
+    }
+    state.stepIndex++;
+
+    const current = SEQUENCE[state.stepIndex];
+    // se for Pai-Nosso, incrementa pnCount (mistério)
+    if (current === 'pn') {
+      state.pnCount = Math.min(state.pnCount + 1, 4); // 0..4
+    }
+    // se for Ave-Maria, soma ao contador de AM
+    if (current === 'am') {
+      state.amCount = Math.min(state.amCount + 1, 53);
+    }
+    saveState();
+    render();
+  }
+
+  function resetTerco() {
+    if (!confirm('Deseja resetar o Terço Mariano?')) return;
+    state = { stepIndex: 0, pnCount: 0, amCount: 0 };
+    saveState();
+    render();
+  }
+
+  function jumpTo(index) {
+    if (index < 0 || index >= SEQUENCE.length) return;
+    // recompute pnCount and amCount based on index
+    let pn = 0, am = 0;
+    for (let i = 0; i <= index; i++) {
+      if (SEQUENCE[i] === 'pn') pn++;
+      if (SEQUENCE[i] === 'am') am++;
+    }
+    state.stepIndex = index;
+    state.pnCount = Math.max(0, pn-1); // pnCount used to index mysteries (0-based)
+    state.amCount = am;
+    saveState();
+    render();
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    loadState();
+    // ensure stepIndex bounds
+    if (state.stepIndex < 0 || state.stepIndex >= SEQUENCE.length) state.stepIndex = 0;
+    render();
+    document.getElementById('btn-next').addEventListener('click', nextStep);
+    document.getElementById('btn-reset').addEventListener('click', resetTerco);
+  });
+  </script>
 </body>
 </html>

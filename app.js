@@ -44,11 +44,52 @@ const MISTERIOS = {
 // UTILITÁRIOS
 // ============================================
 
-function goBack() { history.back(); }
-
-function getTodayDate() {
-  return new Date().toISOString().split("T")[0];
+// ============================================
+// BOTÃO VOLTAR (FUNCIONA MESMO SEM HISTÓRICO)
+// ============================================
+function goBack() {
+  if (document.referrer && document.referrer !== "") {
+    window.history.back();
+  } else {
+    window.location.href = "home.html"; // fallback
+  }
 }
+
+// ============================================
+// PIN (VERSÃO 100% CORRIGIDA)
+// ============================================
+const PIN = {
+  key: 'app_pin',
+  defaultPin: '1234',
+
+  // Sempre retorna um PIN válido (string)
+  getPin() {
+    const saved = Storage.get(this.key, null);
+    return saved && typeof saved === 'string' ? saved : this.defaultPin;
+  },
+
+  // Salva sempre como string
+  setPin(pin) {
+    return Storage.set(this.key, String(pin));
+  },
+
+  // Verifica corretamente
+  verify(pin) {
+    return String(pin) === this.getPin();
+  },
+
+  // Troca o PIN com validação interna
+  changePin(oldPin, newPin) {
+    if (!this.verify(oldPin)) return false;
+    this.setPin(newPin);
+    return true;
+  },
+
+  // Restaura o PIN padrão
+  resetPin() {
+    this.setPin(this.defaultPin);
+  }
+};
 
 function getMisteriosDoDia() {
   const d = new Date().getDay();

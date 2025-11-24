@@ -1,157 +1,330 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rosário Completo - Rosarium</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Rosário Completo - Rosarium</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  :root{--primary:#4360C6;--bg:#FCFAFB;--text:#121212;--muted:#666;--icon:#4D3E43}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+  .header{display:flex;align-items:center;padding:12px 16px}
+  .btn-back{background:transparent;border:none;cursor:pointer;color:var(--text)}
+  .wrap{max-width:760px;margin:1.2rem auto;padding:0 16px}
+  .card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.04);margin-bottom:12px}
+  .prayer{padding:12px}
+  .prayer h3{margin:0 0 .5rem}
+  .meta{color:var(--muted);margin-top:.6rem}
+  .misterio{background:#eef6ff;border-left:4px solid var(--primary);padding:10px;border-radius:8px;margin-bottom:12px}
+  .beads{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+  .bead{display:inline-flex;align-items:center;justify-content:center;user-select:none;cursor:pointer;background:#fbfbfb;color:var(--icon);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .bead.am{width:36px;height:36px;border-radius:50%;font-weight:600}
+  .bead.pn{width:46px;height:46px;border-radius:50%;font-weight:700}
+  .bead.filled{background:var(--primary);color:#fff}
+  .controls{display:flex;gap:.6rem;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:700}
+  .btn-outline{background:transparent;border:1px solid #ddd;color:var(--text)}
+  @media (max-width:420px){ .bead.am{width:30px;height:30px} .bead.pn{width:40px;height:40px} }
+</style>
 </head>
 <body>
-  <!-- Header -->
   <header class="header">
-    <div class="header-content">
-      <button class="btn-back" onclick="goBack()">← Voltar</button>
-      <div class="header-title">
-        <div class="header-logo">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        </div>
-        <span>Rosário Completo</span>
-      </div>
-    </div>
+    <button class="btn-back" onclick="history.back()">← Voltar</button>
+    <div style="font-weight:700;margin-left:8px">Rosário Completo</div>
   </header>
 
-  <!-- Conteúdo -->
-  <div class="page-container">
-    <div class="page-content container-sm">
-      <!-- Contador -->
-      <div class="terco-counter">
-        <div class="counter-display" id="counter">0</div>
-        <p class="counter-label">Contas rezadas</p>
+  <main class="wrap">
+    <!-- mostra dezena atual: título do mistério + virtude -->
+    <section id="misterioCard" class="card misterio" aria-hidden="true">
+      <strong id="mTitle">Mistério</strong>
+      <div id="mDesc"></div>
+      <div class="meta" id="mVirtude"></div>
+    </section>
 
-        <!-- Bolinhas de Progresso -->
-        <div class="beads-container" id="beads-container">
-          <!-- Gerado por JavaScript -->
-        </div>
+    <!-- oração grande -->
+    <section class="card prayer" id="prayerCard" aria-live="polite">
+      <h3 id="pTitle">Oração atual</h3>
+      <p id="pText">Carregando...</p>
+      <div class="meta" id="pMeta"></div>
+    </section>
 
-        <!-- Barra de Progresso -->
-        <div class="progress-bar">
-          <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-        </div>
-        <p class="progress-label" id="progress-label">0%</p>
-
-        <!-- Botões de Controle -->
-        <div class="counter-buttons">
-          <button class="btn" onclick="incrementarTerco('rosario')">+ Próxima</button>
-          <button class="btn btn-outline" onclick="resetarTerco('rosario')">Resetar</button>
-          <a href="calendario-terco.html" class="btn btn-secondary">Calendário</a>
-        </div>
+    <!-- beads: mostra apenas 10 beads + 1 PN bead (pai-nosso da dezena) -->
+    <section class="card">
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <div id="credoCross" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;background:#fff;color:var(--icon);box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer">✝</div>
       </div>
 
-      <!-- Instruções -->
-      <div class="card" style="margin-top: 2rem;">
-        <h3 class="card-title">Rosário Completo (20 contas)</h3>
-        <div class="card-content">
-          <p><strong>Mistérios Gozosos (2ª e 4ª feira):</strong></p>
-          <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
-            <li>Anunciação do Anjo</li>
-            <li>Visitação de Maria a Isabel</li>
-            <li>Nascimento de Jesus</li>
-            <li>Apresentação de Jesus no Templo</li>
-            <li>Perda e Encontro de Jesus no Templo</li>
-          </ol>
-          
-          <p><strong>Mistérios Dolorosos (3ª e 6ª feira):</strong></p>
-          <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
-            <li>Agonia de Jesus no Horto</li>
-            <li>Flagelação de Jesus</li>
-            <li>Coroação de Espinhos</li>
-            <li>Carregamento da Cruz</li>
-            <li>Crucifixão e Morte de Jesus</li>
-          </ol>
+      <div id="beads" class="beads" aria-hidden="false"></div>
 
-          <p><strong>Mistérios Gloriosos (domingo, 1ª e 5ª feira):</strong></p>
-          <ol style="margin-left: 1.5rem;">
-            <li>Ressurreição de Jesus</li>
-            <li>Ascensão de Jesus</li>
-            <li>Descida do Espírito Santo</li>
-            <li>Assunção de Maria</li>
-            <li>Coroação de Maria</li>
-          </ol>
-        </div>
+      <div style="text-align:center;margin-top:8px" id="progressText"></div>
+
+      <div class="controls">
+        <button id="prevDec" class="btn-outline">Dezena anterior</button>
+        <button id="nextBtn" class="btn">Próxima oração</button>
+        <button id="nextDec" class="btn-outline">Próxima dezena</button>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
-  <script src="app.js"></script>
-  <script>
-    const MAX_BEADS = 20;
-    const TERCO_TYPE = 'rosario';
+<script>
+/* Rosário completo — interface por dezena (mostra uma dezena por vez)
+   - 20 dezenas (4 coroas x 5)
+   - cada dezena: PN (pai), 10 AM (ave), Glória, jaculatória "Ó meu Jesus..."
+   - Mistérios e virtudes por dia; a virtude aparece no topo da dezena
+   - Salve Rainha ao final
+   - Armazenamento por dezena e posição dentro da dezena
+*/
 
-    function initBeads() {
-      const container = document.getElementById('beads-container');
-      container.innerHTML = '';
-      
-      for (let i = 1; i <= MAX_BEADS; i++) {
-        const bead = document.createElement('div');
-        bead.className = 'bead';
-        bead.textContent = i;
-        bead.onclick = () => selectBead(i);
-        container.appendChild(bead);
-      }
-      
-      updateBeads();
+const ORA = {
+  credo: 'Creio em Deus Pai todo-poderoso... Amém.',
+  pai: 'Pai nosso, que estais nos céus... Amém.',
+  ave: 'Ave Maria, cheia de graça... Amém.',
+  gloria: 'Glória ao Pai, e ao Filho, e ao Espírito Santo. Amém.',
+  jac: 'Ó meu Jesus, perdoai-nos, livrai-nos do fogo do inferno, levai as almas todas ao céu, especialmente as que mais precisarem da vossa misericórdia. Amém.',
+  salve: 'Salve Rainha, Mãe de Misericórdia... Amém.'
+};
+
+const MISTERIOS = {
+  gozosos:[
+    {titulo:'Anunciação', desc:'O Anjo anuncia a Maria que será Mãe de Deus.', virtude:'Humildade'},
+    {titulo:'Visitação', desc:'Maria visita Isabel.', virtude:'Caridade'},
+    {titulo:'Nascimento', desc:'Jesus nasce em Belém.', virtude:'Pobreza'},
+    {titulo:'Apresentação', desc:'Jesus é apresentado no Templo.', virtude:'Obediência'},
+    {titulo:'Encontro no Templo', desc:'Jesus entre os doutores.', virtude:'Devoção'}
+  ],
+  luminosos:[
+    {titulo:'Batismo no Jordão', desc:'Jesus é batizado por João.', virtude:'Abertura ao Espírito'},
+    {titulo:'Bodas de Caná', desc:'Jesus transforma água em vinho.', virtude:'Fé'},
+    {titulo:'Anúncio do Reino', desc:'Jesus proclama a chegada do Reino.', virtude:'Conversão'},
+    {titulo:'Transfiguração', desc:'Jesus é transfigurado.', virtude:'Desejo de Deus'},
+    {titulo:'Eucaristia', desc:'Instituição da Eucaristia.', virtude:'Adoração'}
+  ],
+  dolorosos:[
+    {titulo:'Agonia no Horto', desc:'Jesus reza no Horto das Oliveiras.', virtude:'Contrição'},
+    {titulo:'Flagelação', desc:'Jesus é flagelado.', virtude:'Pureza'},
+    {titulo:'Coroação de Espinhos', desc:'Jesus é coroado de espinhos.', virtude:'Paciência'},
+    {titulo:'Caminho do Calvário', desc:'Jesus carrega a Cruz.', virtude:'Perseverança'},
+    {titulo:'Crucifixão', desc:'Jesus morre na Cruz.', virtude:'Sacrifício'}
+  ],
+  gloriosos:[
+    {titulo:'Ressurreição', desc:'Jesus ressuscita.', virtude:'Fé'},
+    {titulo:'Ascensão', desc:'Jesus sobe aos céus.', virtude:'Esperança'},
+    {titulo:'Pentecostes', desc:'Descida do Espírito Santo.', virtude:'Amor do Espírito Santo'},
+    {titulo:'Assunção', desc:'Maria é assunta aos céus.', virtude:'Devoção'},
+    {titulo:'Coroação', desc:'Maria é coroada Rainha.', virtude:'Confiança'}
+  ]
+};
+
+// ordem de coroas (usada p/ navegar nas 20 dezenas)
+const COROAS = ['gozosos','luminosos','dolorosos','gloriosos']; // padrão de uso será controlado por dia ou por escolha
+
+// Rosary state: which corona index (0..3), which dezena within corona (0..4), and position within dezena (step: 0=pn, 1..10=aves, 11=gloria, 12=jac)
+const STORAGE = 'rosarium_rosario_v1';
+let state = { coronaIdx: 0, dezenaIdx: 0, step: -2 }; // step=-2 before start (will start by showing Credo/intro), step -1 -> credo, 0->pn,1..10->aves,11->gloria,12->jac
+// we'll use step -1 for creed initial sequence (credo + initial PN + 3 AM + gloria) then proceed to decades or we can open at first dezena; for simplicity, we present initial prayers then dezena 0
+function load(){ try{ const raw = localStorage.getItem(STORAGE); if(raw) state = JSON.parse(raw);}catch(e){console.warn(e)} }
+function save(){ try{ localStorage.setItem(STORAGE, JSON.stringify(state)); }catch(e){console.warn(e)} }
+
+// day-based default corona
+function coronaByDay(){
+  const d = new Date().getDay();
+  if(d===1||d===6) return 0; // gozosos mon+sat
+  if(d===2||d===5) return 2; // dolorosos tue+fri
+  if(d===4) return 1; // thurs luminous
+  return 3; // sun + wed gloriosos
+}
+
+// helper: get current mystery object
+function currentMystery(){
+  const corona = COROAS[state.coronaIdx];
+  const dez = state.dezenaIdx;
+  return MISTERIOS[corona][dez];
+}
+
+// UI render
+function render(){
+  // if state.step < 0 we show opening prayers (credo + initial PN + 3AM + gloria), else show current dezena
+  const mCard = document.getElementById('misterioCard');
+  const mTitle = document.getElementById('mTitle');
+  const mDesc  = document.getElementById('mDesc');
+  const mVirt  = document.getElementById('mVirtude');
+  const pTitle = document.getElementById('pTitle');
+  const pText  = document.getElementById('pText');
+  const pMeta  = document.getElementById('pMeta');
+  const beads  = document.getElementById('beads');
+
+  // show mystery header for current dezena
+  const myst = currentMystery();
+  mTitle.innerText = `${myst.titulo} — Dezena ${state.dezenaIdx + 1} (${COROAS[state.coronaIdx]})`;
+  mDesc.innerText = myst.desc;
+  mVirt.innerText = `Virtude: ${myst.virtude}`;
+  mCard.style.display = 'block';
+
+  // decide which prayer to show according to step
+  if(state.step < 0){
+    // opening: we'll show Credo / PN inicial / 3 AM / Gloria in sequence (-1, 0, 1..3, 4)
+    // map: -1 => Credo, 0 => PN initial, 1..3 => 3 AM initial, 4 => Gloria initial, then move to decade step=0
+    if(state.step === -1){
+      pTitle.innerText = 'Creio';
+      pText.innerText = ORA.credo;
+      pMeta.innerText = '';
+    } else if(state.step === 0){
+      pTitle.innerText = 'Pai-Nosso (inicial)';
+      pText.innerText = ORA.pai;
+      pMeta.innerText = '';
+    } else if(state.step >= 1 && state.step <= 3){
+      pTitle.innerText = `Ave-Maria (inicial ${state.step} de 3)`;
+      pText.innerText = ORA.ave;
+      pMeta.innerText = '';
+    } else {
+      pTitle.innerText = 'Glória';
+      pText.innerText = ORA.gloria;
+      pMeta.innerText = '';
     }
+    // beads area: show minimal representation of opening (PN + 3 AM) as beads
+    beads.innerHTML = '';
+    const small = [];
+    small.push({type:'pn', label:'P', filled: state.step >= 0});
+    for(let i=1;i<=3;i++) small.push({type:'am', label:'', filled: state.step >= i});
+    small.forEach(s=>{
+      const d = document.createElement('div');
+      d.className = 'bead ' + (s.type==='pn' ? 'pn' : 'am') + (s.filled ? ' filled' : '');
+      d.textContent = s.label;
+      beads.appendChild(d);
+    });
+    document.getElementById('progressText').innerText = `Abertura`;
+    return;
+  }
 
-    function updateBeads() {
-      const progress = Terco.getTercoProgress(TERCO_TYPE);
-      const beads = document.querySelectorAll('.bead');
-      
-      beads.forEach((bead, index) => {
-        if (index < progress.count) {
-          bead.classList.add('filled');
-        } else {
-          bead.classList.remove('filled');
-        }
-      });
-      
-      updateCounter(progress.count);
+  // inside a dezena: steps 0..12
+  // 0 => PN (big bead)
+  // 1..10 => AM (10 small beads)
+  // 11 => Gloria
+  // 12 => Jaculatória (Ó meu Jesus...) then automatically stay or move to next dezena
+  // show pTitle/pText accordingly
+  if(state.step === 0){
+    pTitle.innerText = 'Pai-Nosso (da dezena)';
+    pText.innerText = ORA.pai;
+    pMeta.innerText = `Dezena ${state.dezenaIdx+1} de 5 - Corona ${COROAS[state.coronaIdx]}`;
+  } else if(state.step >=1 && state.step <=10){
+    pTitle.innerText = `Ave-Maria (${state.step} de 10)`;
+    pText.innerText = ORA.ave;
+    pMeta.innerText = `Dezena ${state.dezenaIdx+1} de 5 - Corona ${COROAS[state.coronaIdx]}`;
+  } else if(state.step === 11){
+    pTitle.innerText = 'Glória ao Pai';
+    pText.innerText = ORA.gloria;
+    pMeta.innerText = '';
+  } else if(state.step === 12){
+    pTitle.innerText = 'Jaculatória';
+    pText.innerText = ORA.jac;
+    pMeta.innerText = 'Após esta oração, avance para a próxima dezena';
+  }
+
+  // beads render: PN bead + 10 AM beads; mark filled where step progressed
+  beads.innerHTML = '';
+  const pnDiv = document.createElement('div');
+  pnDiv.className = 'bead pn' + (state.step >= 0 ? ' filled' : '');
+  pnDiv.textContent = 'P';
+  pnDiv.title = 'Pai-Nosso';
+  pnDiv.onclick = ()=> { if(state.step >= 0) jumpToStep(0); };
+  beads.appendChild(pnDiv);
+  for(let i=1;i<=10;i++){
+    const amDiv = document.createElement('div');
+    amDiv.className = 'bead am' + (state.step >= i ? ' filled' : '');
+    amDiv.textContent = '';
+    amDiv.title = `Ave-Maria ${i}`;
+    amDiv.onclick = ()=> { jumpToStep(i); };
+    beads.appendChild(amDiv);
+  }
+
+  document.getElementById('progressText').innerText = `Coroa: ${COROAS[state.coronaIdx]} — Dezena ${state.dezenaIdx+1} / 5`;
+}
+
+// jump within current dezena to step 0..12 (note: 12 is jac)
+function jumpToStep(s){
+  if(s < 0 || s > 12) return;
+  state.step = s;
+  save();
+  render();
+}
+
+function next(){
+  // if we are in opening (state.step < 0), advance opening
+  if(state.step < 0){
+    state.step++;
+    // if after opening we pass initial opening to first dezena, set to 0 if reaches opening end
+    if(state.step >= 4){ // opening done (credo + pn + 3am + gl)
+      // move into first dezena step 0
+      state.step = 0;
     }
-
-    function updateCounter(count) {
-      document.getElementById('counter').textContent = count;
-      
-      const percentage = (count / MAX_BEADS) * 100;
-      document.getElementById('progress-fill').style.width = percentage + '%';
-      document.getElementById('progress-label').textContent = Math.round(percentage) + '%';
+    save(); render(); return;
+  }
+  // inside dezena
+  if(state.step < 12){
+    state.step++;
+    // if we moved past 12 (jac), we might keep at 12 until Next Dezena or auto-advance
+    if(state.step === 12){
+      // finished current dezena's jac -> keep until user advances or auto-advance on next-dezena button
     }
+    save(); render(); return;
+  }
+  // if we are at 12 and user clicks next, could advance to next dezena automatically
+  if(state.step === 12){
+    advanceDezena(1);
+  }
+}
 
-    function incrementarTerco(type) {
-      const progress = Terco.incrementTerco(type);
-      updateBeads();
-      
-      if (progress.completed) {
-        alert('Parabéns! Você completou o Rosário Completo!');
-      }
-    }
+function prevDezena(){
+  advanceDezena(-1);
+}
+function nextDezena(){
+  advanceDezena(1);
+}
 
-    function resetarTerco(type) {
-      if (confirm('Deseja resetar o contador?')) {
-        Terco.resetTerco(type);
-        updateBeads();
-      }
-    }
+function advanceDezena(delta){
+  // move crown/dezena indices with wrap
+  let newDez = state.dezenaIdx + delta;
+  let newCorona = state.coronaIdx;
+  if(newDez < 0){
+    newCorona = Math.max(0, state.coronaIdx - 1);
+    newDez = 4;
+  } else if(newDez > 4){
+    newCorona = Math.min(COROAS.length - 1, state.coronaIdx + 1);
+    newDez = 0;
+  }
+  // If reached beyond last corona/dezena (i.e., final after 20 dezenas), show Salve
+  if(newCorona === COROAS.length -1 && newDez === 4 && delta === 1 && state.dezenaIdx === 4 && state.coronaIdx === COROAS.length -1){
+    // after finishing last dezena we will show salve
+    state.coronaIdx = newCorona;
+    state.dezenaIdx = newDez;
+    state.step = 12; // keep at jac until user presses nextDec to finish
+    save(); render(); return;
+  }
+  state.coronaIdx = newCorona;
+  state.dezenaIdx = newDez;
+  state.step = 0; // start at PN of new dezena
+  save(); render();
+}
 
-    function selectBead(number) {
-      const progress = Terco.getTercoProgress(TERCO_TYPE);
-      progress.count = number;
-      Terco.saveTercoProgress(TERCO_TYPE, progress);
-      updateBeads();
-    }
+function save(){
+  try{ localStorage.setItem(STORAGE, JSON.stringify(state)); }catch(e){console.warn(e)}
+}
+function loadState(){ try{ const raw = localStorage.getItem(STORAGE); if(raw) state = JSON.parse(raw);}catch(e){console.warn(e)} }
 
-    // Inicializar
-    document.addEventListener('DOMContentLoaded', initBeads);
-  </script>
+// initial setup
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadState();
+  // initialize default corona by day if state is default
+  if(typeof state.coronaIdx !== 'number' || typeof state.dezenaIdx !== 'number' || typeof state.step !== 'number'){
+    state = { coronaIdx: coronaByDay(), dezenaIdx: 0, step: -1 }; // start at opening sequence
+  }
+  // handlers
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('prevDec').addEventListener('click', ()=>{ prevDezena(); });
+  document.getElementById('nextDec').addEventListener('click', ()=>{ nextDezena(); });
+  document.getElementById('credoCross').addEventListener('click', ()=>{ state.step = -1; save(); render(); });
+  render();
+});
+</script>
 </body>
 </html>

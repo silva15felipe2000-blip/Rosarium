@@ -1,150 +1,281 @@
 /* ============================================
-   ROSARIUM - APP.JS VERSÃO COMPLETA ATUALIZADA
-   Inclui API corrigida (Railway)
+   APP.JS - ROSARIUM (VERSÃO DE DEPURAÇÃO)
+   - Tentativas em cascata: Railway -> Acolitos -> fallback local
+   - Timeouts, logs e mensagens na UI
    ============================================ */
 
-// ============================================
-// ORAÇÕES OFICIAIS COMPLETAS
-// ============================================
+/* =========================
+   UTILITÁRIOS
+   ========================= */
+const TIMEOUT_MS = 8000; // timeout para fetch
 
+function timeoutFetch(url, opts = {}, ms = TIMEOUT_MS) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...opts, signal: controller.signal })
+    .finally(() => clearTimeout(id));
+}
+
+function safeJson(res) {
+  return res.text().then(text => {
+    try { return JSON.parse(text); }
+    catch { return text; }
+  });
+}
+
+function el(id) { return document.getElementById(id); }
+
+function showLiturgiaMessage(html) {
+  const container = el('liturgia-container');
+  if (!container) { console.warn('liturgia-container não encontrado'); return; }
+  container.innerHTML = html;
+}
+
+/* =========================
+   ORAÇÕES / MISTÉRIOS (resumo)
+   ========================= */
 const ORACOES = {
   sinal_da_cruz: "Em nome do Pai, do Filho e do Espírito Santo. Amém.",
-
-  creio: "Creio em Deus Pai todo-poderoso, criador do céu e da terra; e em Jesus Cristo, seu único Filho, nosso Senhor, que foi concebido pelo poder do Espírito Santo, nasceu da Virgem Maria, padeceu sob Pôncio Pilatos, foi crucificado, morto e sepultado; desceu à mansão dos mortos; ressuscitou ao terceiro dia; subiu aos céus, e está sentado à direita de Deus Pai todo-poderoso, donde há de vir a julgar os vivos e os mortos. Creio no Espírito Santo, na santa Igreja Católica, na comunhão dos santos, na remissão dos pecados, na ressurreição da carne, na vida eterna. Amém.",
-
-  pai_nosso: "Pai nosso, que estais nos céus, santificado seja o vosso nome, venha a nós o vosso reino, seja feita a vossa vontade, assim na terra como no céu. O pão nosso de cada dia nos dai hoje, perdoai-nos as nossas dívidas, assim como nós perdoamos aos nossos devedores, e não nos deixeis cair em tentação, mas livrai-nos do mal. Amém.",
-
-  ave_maria: "Ave Maria, cheia de graça, o Senhor é convosco, bendita sois vós entre as mulheres, e bendito é o fruto do vosso ventre, Jesus. Santa Maria, Mãe de Deus, rogai por nós pecadores, agora e na hora da nossa morte. Amém.",
-
-  gloria_ao_pai: "Glória seja ao Pai, e ao Filho, e ao Espírito Santo. Como era no princípio, agora e sempre, por todos os séculos dos séculos. Amém.",
-
-  o_meu_jesus: "Ó meu Jesus, perdoai-nos, livrai-nos do fogo do inferno, levai as almas todas ao céu, especialmente as que mais precisarem da vossa misericórdia. Amém.",
-
-  eterno_pai: "Eterno Pai, ofereço-vos o Corpo e o Sangue, a Alma e a Divindade de Nosso Senhor Jesus Cristo, em reparação dos nossos pecados e pelos do mundo inteiro.",
-
-  pela_sua_dolorosa_paixao: "Pela sua dolorosa Paixão, tende misericórdia de nós e do mundo inteiro.",
-
-  santo_deus: "Santo Deus, Santo Forte, Santo Imortal, tende misericórdia de nós e do mundo inteiro.",
-
-  o_sangue_e_agua: "Ó Sangue e Água, que brotastes do Coração de Jesus como fonte de misericórdia para nós, confio em Vós. Amém."
+  creio: "Creio em Deus Pai todo-poderoso, criador do céu e da terra; e em Jesus Cristo, seu único Filho, nosso Senhor...",
+  pai_nosso: "Pai nosso, que estais nos céus, santificado seja o vosso nome...",
+  ave_maria: "Ave Maria, cheia de graça...",
+  gloria_ao_pai: "Glória seja ao Pai, e ao Filho, e ao Espírito Santo. Amém."
 };
 
-// ============================================
-// FRASES DE SANTOS
-// ============================================
+/* =========================
+   Fallback local (se todas as APIs falharem)
+   ========================= */
+function liturgiaFallback(day, month, year) {
+  return {
+    titulo: `Liturgia - ${day}/${month}/${year}`,
+    leituras: `
+      <strong>Primeira Leitura:</strong><br> (offline) Leia um trecho bíblico que você tenha salvo.<br><br>
+      <strong>Salmo:</strong><br> (offline) Salmo indisponível.<br><br>
+    `,
+    evangelho: "(offline) Evangelho não disponível sem conexão"
+  };
+}
 
-const SAINT_QUOTES = [
-  { quote: "Não tenhas medo. A partir de agora serás pescador de homens.", saint: "Jesus Cristo (Lucas 5:10)" },
-  { quote: "Tudo posso naquele que me fortalece.", saint: "São Paulo (Filipenses 4:13)" },
-  { quote: "Reze, espere e não se preocupe.", saint: "São Padre Pio" },
-  { quote: "A oração é a chave da manhã e o ferrolho da noite.", saint: "Santo Agostinho" },
-  { quote: "Quem canta, ora duas vezes.", saint: "Santo Agostinho" },
-  { quote: "O Rosário é a arma mais poderosa.", saint: "São Padre Pio" }
-];
+/* =========================
+   PROVEDORES (tentativa em cascata)
+   ========================= */
 
-// ============================================
-// MISTÉRIOS DO ROSÁRIO
-// ============================================
+async function tryRailway(day, month, year) {
+  const url = `https://liturgia.up.railway.app/liturgia/${year}/${month}/${day}`;
+  console.log('[Liturgia] tentando Railway:', url);
+  const res = await timeoutFetch(url);
+  if (!res.ok) throw new Error(`Railway retornou ${res.status}`);
+  const data = await safeJson(res);
+  console.log('[Liturgia][Railway] recebido', data);
+  return {
+    titulo: data.titulo || 'Liturgia do Dia',
+    leituras: buildLeiturasHtmlFromApi(data),
+    evangelho: data.evangelho || ''
+  };
+}
 
-const MISTERIOS = {
-  gozosos: [
-    { numero: 1, nome: "Anunciação", descricao: "O Anjo Gabriel anuncia a Maria.", virtude: "Humildade" },
-    { numero: 2, nome: "Visitação", descricao: "Maria visita Isabel.", virtude: "Caridade" },
-    { numero: 3, nome: "Nascimento de Jesus", descricao: "Jesus nasce em Belém.", virtude: "Pobreza" },
-    { numero: 4, nome: "Apresentação", descricao: "Jesus é apresentado no Templo.", virtude: "Obediência" },
-    { numero: 5, nome: "Perda e Encontro", descricao: "Jesus é encontrado no Templo.", virtude: "Busca por Deus" }
-  ],
+async function tryAcolitos(day, month, year) {
+  // endpoint antigo - pode ter CORS — tentamos mesmo assim
+  const url = `https://liturgia.acolitos.com.br/api/liturgia?dia=${day}&mes=${month}&ano=${year}`;
+  console.log('[Liturgia] tentando Acolitos:', url);
+  const res = await timeoutFetch(url);
+  if (!res.ok) throw new Error(`Acolitos retornou ${res.status}`);
+  const data = await safeJson(res);
+  console.log('[Liturgia][Acolitos] recebido', data);
+  // dependendo do formato, adaptamos
+  return {
+    titulo: data.titulo || 'Liturgia do Dia',
+    leituras: buildLeiturasHtmlFromApi(data),
+    evangelho: data.evangelho || data.evangelhoCurto || ''
+  };
+}
 
-  dolorosos: [
-    { numero: 1, nome: "Agonia no Horto", descricao: "Jesus sofre no Horto.", virtude: "Contrição" },
-    { numero: 2, nome: "Flagelação", descricao: "Jesus é flagelado.", virtude: "Pureza" },
-    { numero: 3, nome: "Coroação", descricao: "Jesus é coroado de espinhos.", virtude: "Paciência" },
-    { numero: 4, nome: "Caminho do Calvário", descricao: "Jesus carrega a cruz.", virtude: "Perseverança" },
-    { numero: 5, nome: "Crucifixão", descricao: "Jesus morre na cruz.", virtude: "Sacrifício" }
-  ],
+function buildLeiturasHtmlFromApi(data) {
+  // função robusta que tenta extrair campos comuns
+  const parts = [];
+  if (data.primeiraLeitura || data.leitura1 || data.leituras?.primeira) {
+    const txt = data.primeiraLeitura || data.leitura1 || (data.leituras && data.leituras.primeira) || '';
+    parts.push(`<strong>Primeira Leitura:</strong><br>${txt}<br><br>`);
+  }
+  if (data.segundaLeitura || data.leitura2 || data.leituras?.segunda) {
+    const txt = data.segundaLeitura || data.leitura2 || (data.leituras && data.leituras.segunda) || '';
+    parts.push(`<strong>Segunda Leitura:</strong><br>${txt}<br><br>`);
+  }
+  if (data.salmo || data.psalm || data.leituras?.salmo) {
+    const txt = data.salmo || data.psalm || (data.leituras && data.leituras.salmo) || '';
+    parts.push(`<strong>Salmo:</strong><br>${txt}<br><br>`);
+  }
+  // se nada foi encontrado, tente usar data.leituras texto plano
+  if (parts.length === 0 && (typeof data.leituras === 'string' && data.leituras.trim())) {
+    parts.push(`<strong>Leituras:</strong><br>${data.leituras}<br><br>`);
+  }
+  if (parts.length === 0) parts.push('Leituras não disponíveis.');
+  return parts.join('');
+}
 
-  gloriosos: [
-    { numero: 1, nome: "Ressurreição", descricao: "Jesus ressuscita.", virtude: "Fé" },
-    { numero: 2, nome: "Ascensão", descricao: "Jesus sobe aos céus.", virtude: "Esperança" },
-    { numero: 3, nome: "Pentecostes", descricao: "O Espírito Santo desce.", virtude: "Caridade" },
-    { numero: 4, nome: "Assunção", descricao: "Maria é levada ao Céu.", virtude: "Devoção" },
-    { numero: 5, nome: "Coroação de Maria", descricao: "Maria é coroada.", virtude: "Confiança" }
-  ],
-
-  luminosos: [
-    { numero: 1, nome: "Batismo", descricao: "Jesus é batizado.", virtude: "Abertura ao Espírito Santo" },
-    { numero: 2, nome: "Bodas de Caná", descricao: "Jesus transforma água em vinho.", virtude: "Fé" },
-    { numero: 3, nome: "Proclamação do Reino", descricao: "Jesus prega o Reino.", virtude: "Conversão" },
-    { numero: 4, nome: "Transfiguração", descricao: "Jesus é transfigurado.", virtude: "Desejo de Deus" },
-    { numero: 5, nome: "Eucaristia", descricao: "Jesus institui a Eucaristia.", virtude: "Adoração" }
-  ]
-};
-
-// ============================================
-// LOCALSTORAGE
-// ============================================
-
-const Storage = {
-  set: (key, value) => localStorage.setItem(key, JSON.stringify(value)),
-  get: (key, def = null) => {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : def;
-    } catch {
-      return def;
-    }
-  },
-  remove: (key) => localStorage.removeItem(key)
-};
-
-// ============================================
-// LITURGIA (API CORRIGIDA - RAILWAY)
-// ============================================
+/* =========================
+   FUNÇÃO PRINCIPAL - tenta em cascata
+   ========================= */
 
 async function getLiturgia(day, month, year) {
+  // normalizar: sem zeros à esquerda
+  day = String(Number(day));
+  month = String(Number(month));
+  year = String(Number(year));
+
+  const attempts = [
+    { name: 'Railway', fn: tryRailway },
+    { name: 'Acolitos', fn: tryAcolitos }
+  ];
+
+  let lastError = null;
+
+  for (const provider of attempts) {
+    try {
+      const result = await provider.fn(day, month, year);
+      console.log(`[Liturgia] provider ${provider.name} sucesso`);
+      return result;
+    } catch (err) {
+      console.warn(`[Liturgia] provider ${provider.name} falhou:`, err.message || err);
+      lastError = err;
+      // continua para o próximo
+    }
+  }
+
+  console.warn('[Liturgia] todos os provedores falharam. Usando fallback local.', lastError);
+  return liturgiaFallback(day, month, year);
+}
+
+/* =========================
+   UI / Liturgia page helpers
+   ========================= */
+
+let liturgiaDataCache = null;
+
+async function loadLiturgiaFromInput() {
+  const dateInput = el('date-input');
+  if (!dateInput) { console.warn('date-input não encontrado'); return; }
+  const dateVal = dateInput.value;
+  if (!dateVal) { showLiturgiaMessage('<p style="text-align:center">Escolha uma data.</p>'); return; }
+
+  const [year, month, day] = dateVal.split('-');
+  showLiturgiaMessage('<p style="text-align:center">Carregando liturgia...</p>');
   try {
-    const url = `https://liturgia.up.railway.app/liturgia/${year}/${month}/${day}`;
-    const response = await fetch(url);
-
-    if (!response.ok) throw new Error("Erro na API");
-
-    const data = await response.json();
-
-    return {
-      titulo: data.titulo || "Liturgia do Dia",
-      leituras: `
-        <strong>Primeira Leitura:</strong><br>${data.primeiraLeitura || "Não disponível"}<br><br>
-        ${data.segundaLeitura ? `<strong>Segunda Leitura:</strong><br>${data.segundaLeitura}<br><br>` : ""}
-        <strong>Salmo:</strong><br>${data.salmo || "Não disponível"}<br><br>
-      `,
-      evangelho: data.evangelho || ""
-    };
-
-  } catch (error) {
-    return {
-      titulo: "Liturgia do Dia",
-      leituras: "Conexão indisponível. Verifique sua internet.",
-      evangelho: ""
-    };
+    const data = await getLiturgia(day, month, year);
+    liturgiaDataCache = data;
+    const html = `
+      <div class="card">
+        <h3 class="card-title">${escapeHtml(data.titulo || 'Liturgia do Dia')}</h3>
+        <div class="card-content">
+          ${data.leituras ? `<h4 style="margin-top:1rem;font-weight:600">Leituras:</h4><p>${data.leituras}</p>` : ''}
+          ${data.evangelho ? `<h4 style="margin-top:1rem;font-weight:600">Evangelho:</h4><p>${escapeHtml(data.evangelho)}</p>` : ''}
+        </div>
+      </div>
+    `;
+    showLiturgiaMessage(html);
+    // mostrar botão lectio
+    const lectioBtnContainer = el('lectio-button-container');
+    if (lectioBtnContainer) lectioBtnContainer.style.display = 'block';
+  } catch (e) {
+    console.error('Erro ao carregar liturgia (catch final):', e);
+    showLiturgiaMessage(`<div class="card"><div class="card-content"><p style="color:var(--destructive)">Erro ao carregar liturgia. ${escapeHtml(String(e.message || e))}</p></div></div>`);
   }
 }
 
-// ============================================
-// FUNÇÕES DE NAVEGAÇÃO
-// ============================================
-
-function goBack() {
-  window.history.back();
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function navigateTo(page) {
-  window.location.href = page;
+/* =========================
+   LECTIO helpers (simples)
+   ========================= */
+
+let currentLectioStep = 1;
+function startLectio() {
+  const liturgiaContainer = el('liturgia-container');
+  const lectioContainer = el('lectio-container');
+  const lectioBtnContainer = el('lectio-button-container');
+  if (liturgiaContainer) liturgiaContainer.style.display = 'none';
+  if (lectioBtnContainer) lectioBtnContainer.style.display = 'none';
+  if (lectioContainer) {
+    lectioContainer.classList.remove('hidden');
+    selectLectioStep(1);
+  }
 }
 
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
+function selectLectioStep(step) {
+  currentLectioStep = step;
+  const titles = ['1. Leitura', '2. Meditação', '3. Oração', '4. Contemplação'];
+  const contents = [
+    'Leia atentamente a passagem bíblica da Liturgia Diária. Deixe a Palavra de Deus falar ao seu coração.',
+    'Medite sobre o que você leu. O que Deus quer dizer para você através dessa passagem?',
+    'Ore respondendo ao que Deus lhe disse. Converse com Deus sobre seus sentimentos e compreensão.',
+    'Contemple a presença de Deus. Descanse em silêncio na presença do Senhor.'
+  ];
+  const stepTitle = el('step-title');
+  const stepContent = el('step-content');
+  if (stepTitle) stepTitle.textContent = titles[step-1] || 'Etapa';
+  if (stepContent) stepContent.innerHTML = `<p>${contents[step-1] || ''}</p>`;
+  const saved = Storage.get(`lectio_step_${step}`, '');
+  const notes = el('step-notes');
+  if (notes) notes.value = saved || '';
+  // atualizar botões visuais
+  for (let i=1;i<=4;i++){
+    const btn = el(`step-${i}-btn`);
+    if (!btn) continue;
+    if (i===step) btn.classList.remove('btn-outline'); else btn.classList.add('btn-outline');
+  }
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("Rosarium carregado com sucesso");
+function saveLectioStep() {
+  const notes = el('step-notes');
+  if (!notes) return alert('Campo de notas não encontrado');
+  Storage.set(`lectio_step_${currentLectioStep}`, notes.value || '');
+  alert('Anotações salvas com sucesso!');
+}
+
+function closeLectio() {
+  const lectioContainer = el('lectio-container');
+  const liturgiaContainer = el('liturgia-container');
+  const lectioBtnContainer = el('lectio-button-container');
+  if (lectioContainer) lectioContainer.classList.add('hidden');
+  if (liturgiaContainer) liturgiaContainer.style.display = 'block';
+  if (lectioBtnContainer) lectioBtnContainer.style.display = 'block';
+}
+
+/* =========================
+   Inicialização global
+   ========================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('[APP] DOMContentLoaded - iniciando');
+
+  // se houver um campo date-input, preenche com hoje
+  const dateInput = el('date-input');
+  if (dateInput) {
+    const today = new Date();
+    const iso = today.toISOString().split('T')[0];
+    if (!dateInput.value) dateInput.value = iso;
+  }
+
+  // botões (se existirem no HTML)
+  const btnLoad = document.querySelector('[onclick="loadLiturgia()"], button.btn[onclick*="loadLiturgia"]');
+  // não dependemos do botão; chamamos função abaixo para inicializar
+  // Expõe função global para ser chamada do HTML
+  window.getLiturgia = getLiturgia;
+  window.loadLiturgia = loadLiturgiaFromInput;
+  window.startLectio = startLectio;
+  window.selectLectioStep = selectLectioStep;
+  window.saveLectioStep = saveLectioStep;
+  window.closeLectio = closeLectio;
+
+  // se tiver container de liturgia, carrega a data atual automaticamente
+  if (el('liturgia-container') && el('date-input')) {
+    // tenta carregar automaticamente
+    setTimeout(() => {
+      try { loadLiturgiaFromInput(); }
+      catch (e) { console.error('Erro auto-loading liturgia', e); }
+    }, 250);
+  }
 });

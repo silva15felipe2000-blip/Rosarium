@@ -1,17 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Configurações - Rosarium</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* estilo mínimo */
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; }
+    .header { background: #800000; color: #fff; padding: 1rem; display:flex; align-items:center; }
+    .header-content { display:flex; align-items:center; gap:1rem; }
+    .btn-back { padding:0.4rem 0.6rem; background:transparent; border:none; color:#fff; cursor:pointer; }
+    .page-container { max-width:900px; margin:2rem auto; padding:0 1rem; }
+    .card { background:#fff; padding:1rem; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.08); margin-bottom:1rem; }
+    .btn { padding:0.6rem 1rem; border:none; background:#800000; color:#fff; border-radius:6px; cursor:pointer; }
+    .btn-outline { padding:0.6rem 1rem; border:1px solid #aaa; background:#fff; color:#333; border-radius:6px; cursor:pointer; }
+    .form-group { margin-bottom:0.8rem; }
+    .input { width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px; }
+  </style>
 </head>
 <body>
 
-  <!-- Script de segurança -->
   <script>
     function goBack() {
-      // Se houver histórico, volta. Se não houver, vai para home
       if (document.referrer && history.length > 1) {
         history.back();
       } else {
@@ -20,19 +31,10 @@
     }
   </script>
 
-  <!-- Header -->
   <header class="header">
     <div class="header-content">
       <button class="btn-back" onclick="goBack()">← Voltar</button>
-      <div class="header-title">
-        <div class="header-logo">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </div>
-        <span>Configurações</span>
-      </div>
+      <div class="header-title"><span>Configurações</span></div>
     </div>
   </header>
 
@@ -43,43 +45,39 @@
       <h1 class="page-title">Configurações</h1>
 
       <!-- Segurança -->
-      <div class="card" style="margin-bottom: 2rem;">
+      <div class="card">
         <h3 class="card-title">Segurança</h3>
         <div class="card-content">
           <div class="form-group">
-            <label class="label">PIN Atual (4 dígitos):</label>
-            <input type="password" class="input" id="current-pin" placeholder="Digite seu PIN atual" maxlength="4">
+            <label>PIN Atual (4 dígitos):</label>
+            <input type="password" class="input" id="current-pin" placeholder="Digite seu PIN atual" maxlength="4" />
           </div>
-          
+
           <div class="form-group">
-            <label class="label">Novo PIN (4 dígitos):</label>
-            <input type="password" class="input" id="new-pin" placeholder="Digite o novo PIN" maxlength="4">
+            <label>Novo PIN (4 dígitos):</label>
+            <input type="password" class="input" id="new-pin" placeholder="Digite o novo PIN" maxlength="4" />
           </div>
-          
+
           <div class="form-group">
-            <label class="label">Confirmar PIN:</label>
-            <input type="password" class="input" id="confirm-pin" placeholder="Confirme o novo PIN" maxlength="4">
+            <label>Confirmar PIN:</label>
+            <input type="password" class="input" id="confirm-pin" placeholder="Confirme o novo PIN" maxlength="4" />
           </div>
-          
-          <button class="btn" onclick="changePin()" style="width: 100%;">Alterar PIN</button>
+
+          <button class="btn" onclick="changePin()" style="width:100%;">Alterar PIN</button>
         </div>
       </div>
 
       <!-- Dados -->
-      <div class="card" style="margin-bottom: 2rem;">
+      <div class="card">
         <h3 class="card-title">Dados e Privacidade</h3>
         <div class="card-content">
-          <p style="margin-bottom: 1rem; color: var(--muted-foreground);">
+          <p style="margin-bottom: 1rem; color: #666;">
             Seus dados são salvos apenas no seu dispositivo.
           </p>
-          
-          <button class="btn btn-outline" onclick="exportData()" style="width: 100%; margin-bottom: 1rem;">
-            Exportar Dados
-          </button>
-          
-          <button class="btn btn-outline" onclick="clearAllData()" style="width: 100%; color: var(--destructive);">
-            Limpar Todos os Dados
-          </button>
+
+          <button class="btn-outline" onclick="exportData()" style="width:100%; margin-bottom:1rem;">Exportar Dados</button>
+
+          <button class="btn-outline" onclick="clearAllData()" style="width:100%; color: #a00;">Limpar Todos os Dados</button>
         </div>
       </div>
 
@@ -88,82 +86,13 @@
         <h3 class="card-title">Sobre</h3>
         <div class="card-content">
           <p><strong>Rosarium</strong></p>
-          <p style="color: var(--muted-foreground); margin-bottom: 1rem;">v1.0.0</p>
+          <p style="color:#666; margin-bottom:1rem;">v1.0.0</p>
           <p>Aplicativo católico para oração, estudos e devoção diária.</p>
         </div>
       </div>
 
     </div>
   </div>
-
-  <script>
-
-    // 🔐 CORREÇÃO COMPLETA DO PIN
-    function changePin() {
-      const currentPin = document.getElementById('current-pin').value.trim();
-      const newPin = document.getElementById('new-pin').value.trim();
-      const confirmPin = document.getElementById('confirm-pin').value.trim();
-
-      if (!currentPin || !newPin || !confirmPin) {
-        alert("Preencha todos os campos.");
-        return;
-      }
-
-      if (!PIN.verify(currentPin)) {
-        alert("PIN atual incorreto.");
-        return;
-      }
-
-      if (newPin.length !== 4 || confirmPin.length !== 4 || isNaN(newPin) || isNaN(confirmPin)) {
-        alert("O PIN deve ter 4 números.");
-        return;
-      }
-
-      if (newPin !== confirmPin) {
-        alert("Os PINs não coincidem.");
-        return;
-      }
-
-      // salva como string garantida
-      PIN.setPin(String(newPin));
-
-      alert("PIN alterado com sucesso!");
-
-      document.getElementById('current-pin').value = "";
-      document.getElementById('new-pin').value = "";
-      document.getElementById('confirm-pin').value = "";
-    }
-
-
-    function exportData() {
-      const data = {
-        terco: Terco.getTercoCalendar(),
-        anotacoes: Anotacoes.getAnotacoes(),
-        confissoes: Confissao.getConfissoes(),
-        exportDate: new Date().toISOString()
-      };
-      
-      const dataStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "rosarium-dados.json";
-      link.click();
-
-      URL.revokeObjectURL(url);
-    }
-
-
-    function clearAllData() {
-      if (!confirm("Deseja realmente apagar todos os dados?")) return;
-      localStorage.clear();
-      alert("Dados apagados.");
-      window.location.href = "home.html";
-    }
-
-  </script>
 
 </body>
 </html>

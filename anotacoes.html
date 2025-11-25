@@ -26,17 +26,17 @@
   <div class="page-container">
     <div class="page-content container-md">
       <!-- Tela de PIN -->
-      <div id="pin-screen" class="hidden">
+      <div id="pin-screen">
         <div style="max-width: 400px; margin: 4rem auto;">
           <div class="card">
             <h2 class="card-title" style="text-align: center; margin-bottom: 2rem;">Anotações Privadas</h2>
             <p style="text-align: center; margin-bottom: 1.5rem; color: var(--muted-foreground);">Digite seu PIN de 4 dígitos</p>
             
             <div class="pin-input" id="pin-input">
-              <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(event, 0)">
-              <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(event, 1)">
-              <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(event, 2)">
-              <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(event, 3)">
+              <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" onkeyup="handlePinInput(event, 0)">
+              <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" onkeyup="handlePinInput(event, 1)">
+              <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" onkeyup="handlePinInput(event, 2)">
+              <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" onkeyup="handlePinInput(event, 3)">
             </div>
             
             <button class="btn" onclick="verifyPin()" style="width: 100%; margin-top: 1.5rem;">Entrar</button>
@@ -78,7 +78,7 @@
           
           <div class="form-group">
             <label class="label">Conteúdo:</label>
-            <textarea class="input" id="anotacao-conteudo" placeholder="Escreva sua anotação..."></textarea>
+            <textarea class="input" id="anotacao-conteudo" placeholder="Escreva sua anotação..." style="min-height: 200px;"></textarea>
           </div>
           
           <div style="display: flex; gap: 1rem;">
@@ -96,6 +96,7 @@
     let editingId = null;
 
     function init() {
+      console.log('Inicializando anotações...');
       showPinScreen();
     }
 
@@ -104,24 +105,39 @@
       document.getElementById('anotacoes-screen').classList.add('hidden');
       document.getElementById('form-screen').classList.add('hidden');
       isLoggedIn = false;
+      
+      // Focar no primeiro input
+      setTimeout(() => {
+        const firstInput = document.querySelector('.pin-digit');
+        if (firstInput) firstInput.focus();
+      }, 100);
     }
 
     function handlePinInput(event, index) {
       const inputs = document.querySelectorAll('.pin-digit');
       const value = event.target.value;
       
+      // Permitir apenas números
+      if (!/^\d*$/.test(value)) {
+        event.target.value = '';
+        return;
+      }
+      
       if (value.length > 1) {
         event.target.value = value.slice(-1);
       }
       
+      // Navegar para próximo input
       if (value && index < 3) {
         inputs[index + 1].focus();
       }
       
+      // Backspace
       if (event.key === 'Backspace' && !value && index > 0) {
         inputs[index - 1].focus();
       }
       
+      // Enter para confirmar
       if (event.key === 'Enter') {
         verifyPin();
       }
@@ -131,15 +147,20 @@
       const inputs = document.querySelectorAll('.pin-digit');
       const pin = Array.from(inputs).map(input => input.value).join('');
       
+      console.log('PIN digitado:', pin);
+      console.log('PIN armazenado:', PIN.getPin());
+      
       if (pin.length !== 4) {
         alert('Digite um PIN de 4 dígitos');
         return;
       }
       
       if (PIN.verify(pin)) {
+        console.log('PIN correto!');
         isLoggedIn = true;
         showAnotacoesScreen();
       } else {
+        console.log('PIN incorreto');
         alert('PIN incorreto');
         inputs.forEach(input => input.value = '');
         inputs[0].focus();
@@ -154,30 +175,37 @@
     }
 
     function loadAnotacoes() {
-      const anotacoes = Anotacoes.getAnotacoes();
-      const list = document.getElementById('anotacoes-list');
-      list.innerHTML = '';
-      
-      if (anotacoes.length === 0) {
-        list.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--muted-foreground);">Nenhuma anotação ainda</p>';
-        return;
+      try {
+        const anotacoes = Anotacoes.getAnotacoes();
+        const list = document.getElementById('anotacoes-list');
+        list.innerHTML = '';
+        
+        if (!anotacoes || anotacoes.length === 0) {
+          list.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--muted-foreground);">Nenhuma anotação ainda</p>';
+          return;
+        }
+        
+        anotacoes.forEach(anotacao => {
+          const item = document.createElement('div');
+          item.className = 'item';
+          const dataFormatada = new Date(anotacao.data).toLocaleDateString('pt-BR');
+          
+          item.innerHTML = `
+            <div class="item-content">
+              <div class="item-title">${escapeHtml(anotacao.titulo)}</div>
+              <div class="item-description">${dataFormatada}</div>
+            </div>
+            <div class="item-actions">
+              <button class="item-action-btn" onclick="editAnotacao('${anotacao.id}')">Editar</button>
+              <button class="item-action-btn" onclick="deleteAnotacao('${anotacao.id}')">Excluir</button>
+            </div>
+          `;
+          list.appendChild(item);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar anotações:', error);
+        alert('Erro ao carregar anotações');
       }
-      
-      anotacoes.forEach(anotacao => {
-        const item = document.createElement('div');
-        item.className = 'item';
-        item.innerHTML = `
-          <div class="item-content">
-            <div class="item-title">${anotacao.titulo}</div>
-            <div class="item-description">${new Date(anotacao.data).toLocaleDateString('pt-BR')}</div>
-          </div>
-          <div class="item-actions">
-            <button class="item-action-btn" onclick="editAnotacao(${anotacao.id})">Editar</button>
-            <button class="item-action-btn" onclick="deleteAnotacao(${anotacao.id})">Excluir</button>
-          </div>
-        `;
-        list.appendChild(item);
-      });
     }
 
     function showNewAnotacao() {
@@ -189,46 +217,70 @@
       document.getElementById('anotacoes-screen').classList.add('hidden');
       document.getElementById('form-screen').classList.remove('hidden');
       
-      document.getElementById('anotacao-titulo').focus();
+      setTimeout(() => {
+        document.getElementById('anotacao-titulo').focus();
+      }, 100);
     }
 
     function editAnotacao(id) {
-      const anotacoes = Anotacoes.getAnotacoes();
-      const anotacao = anotacoes.find(a => a.id === id);
-      
-      if (!anotacao) return;
-      
-      editingId = id;
-      document.getElementById('form-title').textContent = 'Editar Anotação';
-      document.getElementById('anotacao-titulo').value = anotacao.titulo;
-      document.getElementById('anotacao-conteudo').value = anotacao.conteudo;
-      
-      document.getElementById('anotacoes-screen').classList.add('hidden');
-      document.getElementById('form-screen').classList.remove('hidden');
+      try {
+        const anotacoes = Anotacoes.getAnotacoes();
+        const anotacao = anotacoes.find(a => a.id === parseInt(id));
+        
+        if (!anotacao) {
+          alert('Anotação não encontrada');
+          return;
+        }
+        
+        editingId = anotacao.id;
+        document.getElementById('form-title').textContent = 'Editar Anotação';
+        document.getElementById('anotacao-titulo').value = anotacao.titulo;
+        document.getElementById('anotacao-conteudo').value = anotacao.conteudo;
+        
+        document.getElementById('anotacoes-screen').classList.add('hidden');
+        document.getElementById('form-screen').classList.remove('hidden');
+      } catch (error) {
+        console.error('Erro ao editar:', error);
+        alert('Erro ao editar anotação');
+      }
     }
 
     function saveAnotacao() {
-      const titulo = document.getElementById('anotacao-titulo').value.trim();
-      const conteudo = document.getElementById('anotacao-conteudo').value.trim();
-      
-      if (!titulo || !conteudo) {
-        alert('Preencha todos os campos');
-        return;
+      try {
+        const titulo = document.getElementById('anotacao-titulo').value.trim();
+        const conteudo = document.getElementById('anotacao-conteudo').value.trim();
+        
+        if (!titulo || !conteudo) {
+          alert('Preencha todos os campos');
+          return;
+        }
+        
+        if (editingId) {
+          const sucesso = Anotacoes.updateAnotacao(editingId, titulo, conteudo);
+          if (!sucesso) {
+            alert('Erro ao atualizar anotação');
+            return;
+          }
+        } else {
+          Anotacoes.addAnotacao(titulo, conteudo);
+        }
+        
+        cancelForm();
+      } catch (error) {
+        console.error('Erro ao salvar:', error);
+        alert('Erro ao salvar anotação');
       }
-      
-      if (editingId) {
-        Anotacoes.updateAnotacao(editingId, titulo, conteudo);
-      } else {
-        Anotacoes.addAnotacao(titulo, conteudo);
-      }
-      
-      cancelForm();
     }
 
     function deleteAnotacao(id) {
       if (confirm('Deseja excluir esta anotação?')) {
-        Anotacoes.deleteAnotacao(id);
-        loadAnotacoes();
+        try {
+          Anotacoes.deleteAnotacao(parseInt(id));
+          loadAnotacoes();
+        } catch (error) {
+          console.error('Erro ao deletar:', error);
+          alert('Erro ao excluir anotação');
+        }
       }
     }
 
@@ -244,8 +296,15 @@
       showPinScreen();
     }
 
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     // Inicializar
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
+

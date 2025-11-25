@@ -1,333 +1,229 @@
-/* ============================================
-   APP.JS — CORREÇÃO COMPLETA (PIN, goBack, storage)
-   Substitua 100% do seu app.js por este arquivo
-   ============================================ */
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anotações - Rosarium</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; }
+    .hidden { display: none; }
+    .header { background: #800000; color: #fff; padding: 1rem; display:flex; align-items:center; }
+    .header-title { display:flex; align-items:center; gap:0.5rem; font-weight:bold; font-size:1.2rem; }
+    .btn { padding:0.5rem 1rem; cursor:pointer; border:none; background:#800000; color:#fff; border-radius:4px; }
+    .btn-outline { border:1px solid #800000; background:#fff; color:#800000; }
+    .btn-secondary { background:#555; color:#fff; }
+    .container-md { max-width:600px; margin:2rem auto; }
+    .card { background:#fff; padding:1rem 2rem; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    .pin-input input { width:2rem; text-align:center; font-size:1.5rem; margin:0.25rem; }
+    .items-list .item { background:#fff; margin-bottom:0.5rem; padding:0.5rem; border-radius:4px; display:flex; justify-content:space-between; align-items:center; }
+    .item-actions button { margin-left:0.5rem; }
+    .input, textarea { width:100%; padding:0.5rem; margin-top:0.25rem; margin-bottom:0.5rem; border:1px solid #ccc; border-radius:4px; }
+    .form-group { margin-bottom:1rem; }
+  </style>
+</head>
+<body>
 
-/* =========================
-   STORAGE (deve vir primeiro)
-   ========================= */
+  <!-- Header -->
+  <header class="header">
+    <button class="btn" onclick="goBack()">← Voltar</button>
+    <div class="header-title">Anotações</div>
+  </header>
+
+  <div class="container-md">
+
+    <!-- PIN SCREEN -->
+    <div id="pin-screen">
+      <div class="card">
+        <h2>Anotações Privadas</h2>
+        <p>Digite seu PIN de 4 dígitos</p>
+        <div class="pin-input">
+          <input type="text" maxlength="1" onkeyup="handlePinInput(event,0)">
+          <input type="text" maxlength="1" onkeyup="handlePinInput(event,1)">
+          <input type="text" maxlength="1" onkeyup="handlePinInput(event,2)">
+          <input type="text" maxlength="1" onkeyup="handlePinInput(event,3)">
+        </div>
+        <button class="btn" onclick="verifyPin()">Entrar</button>
+        <p>PIN padrão: 1234</p>
+      </div>
+    </div>
+
+    <!-- ANOTAÇÕES SCREEN -->
+    <div id="anotacoes-screen" class="hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h2>Minhas Anotações</h2>
+        <button class="btn btn-secondary" onclick="showNewAnotacao()">+ Nova</button>
+      </div>
+      <div id="anotacoes-list" class="items-list"></div>
+      <button class="btn btn-outline" style="margin-top:1rem;" onclick="logout()">Sair</button>
+    </div>
+
+    <!-- FORM SCREEN -->
+    <div id="form-screen" class="hidden">
+      <div class="card">
+        <h2 id="form-title">Nova Anotação</h2>
+        <div class="form-group">
+          <label>Título:</label>
+          <input type="text" id="anotacao-titulo" placeholder="Título da anotação">
+        </div>
+        <div class="form-group">
+          <label>Conteúdo:</label>
+          <textarea id="anotacao-conteudo" placeholder="Escreva sua anotação..."></textarea>
+        </div>
+        <div style="display:flex; gap:1rem;">
+          <button class="btn" onclick="saveAnotacao()" style="flex:1;">Salvar</button>
+          <button class="btn btn-outline" onclick="cancelForm()" style="flex:1;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+/* ---------------------------
+   STORAGE
+--------------------------- */
 const Storage = {
-  set: (key, val) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(val));
-      return true;
-    } catch (e) {
-      console.error('Storage.set error', e);
-      return false;
-    }
-  },
-
-  get: (key, def = null) => {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : def;
-    } catch (e) {
-      console.error('Storage.get error', e);
-      return def;
-    }
-  },
-
-  remove: (key) => {
-    try {
-      localStorage.removeItem(key);
-      return true;
-    } catch (e) {
-      console.error('Storage.remove error', e);
-      return false;
-    }
-  },
-
-  clear: () => {
-    try {
-      localStorage.clear();
-      return true;
-    } catch (e) {
-      console.error('Storage.clear error', e);
-      return false;
-    }
-  }
+  set: (key, val) => { try{localStorage.setItem(key,JSON.stringify(val))}catch(e){console.error(e);} },
+  get: (key, def=null) => { try{const v=localStorage.getItem(key); return v?JSON.parse(v):def}catch(e){console.error(e); return def;} },
+  remove: (key) => { try{localStorage.removeItem(key);}catch(e){console.error(e);} }
 };
 
-/* =========================
-   UTILITÁRIOS GERAIS
-   ========================= */
-function getTodayDate() {
-  return new Date().toISOString().split('T')[0];
-}
-
-function goBack() {
-  try {
-    // se houver histórico, volta
-    if (document.referrer && document.referrer !== "") {
-      window.history.back();
-    } else {
-      // fallback seguro: tenta home.html, index.html ou raiz
-      const possible = ['home.html', 'index.html', '/'];
-      for (const p of possible) {
-        // tenta redirecionar; se arquivo não existir, navegador mostra 404 mas evita travar
-        window.location.href = p;
-        return;
-      }
-    }
-  } catch (e) {
-    console.error('goBack error', e);
-    window.location.href = 'home.html';
-  }
-}
-
-/* =========================
-   ORAÇÕES / FRASES / MISTÉRIOS
-   (mantive resumido onde já estava)
-   ========================= */
-const ORACOES = {
-  sinal_da_cruz: "Em nome do Pai, do Filho e do Espírito Santo. Amém.",
-  creio: "Creio em Deus Pai todo-poderoso, criador do céu e da terra; ...",
-  pai_nosso: "Pai nosso, que estais nos céus...",
-  ave_maria: "Ave Maria, cheia de graça...",
-  gloria_ao_pai: "Glória ao Pai, ao Filho e ao Espírito Santo...",
-  o_meu_jesus: "Ó meu Jesus, perdoai-nos...",
-  eterno_pai: "Eterno Pai, ofereço-vos...",
-  pela_sua_dolorosa_paixao: "Pela sua dolorosa Paixão...",
-  santo_deus: "Santo Deus, Santo Forte...",
-  o_sangue_e_agua: "Ó Sangue e Água..."
-};
-
-const SAINT_QUOTES = [
-  { quote: "Tudo posso naquele que me fortalece.", saint: "São Paulo" },
-  { quote: "Reze, espere e não se preocupe.", saint: "São Padre Pio" },
-  { quote: "Quem canta, ora duas vezes.", saint: "Santo Agostinho" }
-];
-
-const MISTERIOS = {
-  gozosos: [
-    { numero: 1, nome: "Anunciação", descricao: "O Anjo Gabriel anuncia a Maria.", virtude: "Humildade" },
-    { numero: 2, nome: "Visitação", descricao: "Maria visita Isabel.", virtude: "Caridade" },
-    { numero: 3, nome: "Nascimento de Jesus", descricao: "Jesus nasce em Belém.", virtude: "Pobreza" },
-    { numero: 4, nome: "Apresentação", descricao: "Jesus é apresentado no Templo.", virtude: "Obediência" },
-    { numero: 5, nome: "Perda e Encontro", descricao: "Jesus é encontrado no Templo.", virtude: "Devoção" }
-  ],
-  dolorosos: [
-    { numero: 1, nome: "Agonia no Horto", descricao: "Jesus sofre no Horto.", virtude: "Contrição" },
-    { numero: 2, nome: "Flagelação", descricao: "Jesus é flagelado.", virtude: "Pureza" },
-    { numero: 3, nome: "Coroação de Espinhos", descricao: "Jesus é coroado de espinhos.", virtude: "Paciência" },
-    { numero: 4, nome: "Caminho do Calvário", descricao: "Jesus carrega a cruz.", virtude: "Perseverança" },
-    { numero: 5, nome: "Crucificação", descricao: "Jesus morre na cruz.", virtude: "Sacrifício" }
-  ],
-  gloriosos: [
-    { numero: 1, nome: "Ressurreição", descricao: "Jesus ressuscita.", virtude: "Fé" },
-    { numero: 2, nome: "Ascensão", descricao: "Jesus sobe aos céus.", virtude: "Esperança" },
-    { numero: 3, nome: "Pentecostes", descricao: "O Espírito Santo desce.", virtude: "Amor" },
-    { numero: 4, nome: "Assunção", descricao: "Maria é levada ao Céu.", virtude: "Devoção" },
-    { numero: 5, nome: "Coroação de Maria", descricao: "Maria é coroada.", virtude: "Confiança" }
-  ],
-  luminosos: [
-    { numero: 1, nome: "Batismo no Jordão", descricao: "Jesus é batizado por João Batista.", virtude: "Abertura ao Espírito Santo" },
-    { numero: 2, nome: "Bodas de Caná", descricao: "Jesus transforma água em vinho.", virtude: "Fé" },
-    { numero: 3, nome: "Anúncio do Reino", descricao: "Jesus proclama o Reino de Deus.", virtude: "Conversão" },
-    { numero: 4, nome: "Transfiguração", descricao: "Jesus é transfigurado.", virtude: "Desejo de Deus" },
-    { numero: 5, nome: "Instituição da Eucaristia", descricao: "Jesus institui a Eucaristia.", virtude: "Adoração" }
-  ]
-};
-
-function getMisteriosDoDia() {
-  const d = new Date().getDay();
-  if (d === 1 || d === 6) return MISTERIOS.gozosos;
-  if (d === 2 || d === 5) return MISTERIOS.dolorosos;
-  if (d === 4) return MISTERIOS.luminosos;
-  return MISTERIOS.gloriosos;
-}
-
-/* =========================
-   PIN (corrigido)
-   ========================= */
+/* ---------------------------
+   PIN
+--------------------------- */
 const PIN = {
   key: 'app_pin',
   defaultPin: '1234',
-
-  getPin() {
-    const saved = Storage.get(this.key, null);
-    // se for null/undefined, retorna default
-    return (typeof saved === 'string' && saved.length > 0) ? saved : this.defaultPin;
-  },
-
-  setPin(pin) {
-    // aceita números ou strings, salva como string de 4 dígitos
-    const s = String(pin).slice(0, 4);
-    Storage.set(this.key, s);
-    return true;
-  },
-
-  verify(pin) {
-    try {
-      return String(pin) === this.getPin();
-    } catch (e) {
-      console.error('PIN.verify error', e);
-      return false;
-    }
-  },
-
-  changePin(oldPin, newPin) {
-    if (!this.verify(oldPin)) return false;
-    this.setPin(newPin);
-    return true;
-  },
-
-  resetPin() {
-    this.setPin(this.defaultPin);
-  }
+  getPin() { return Storage.get(this.key,this.defaultPin) || this.defaultPin; },
+  setPin(pin) { Storage.set(this.key,String(pin).slice(0,4)); },
+  verify(pin) { return String(pin) === this.getPin(); }
 };
 
-/* =========================
-   TERÇO (compatibilidade)
-   ========================= */
-const Terco = {
-  getProgress(type) {
-    return Storage.get(`terco_${type}`, { count: 0, completed: false, date: null });
-  },
-
-  saveProgress(type, data) {
-    Storage.set(`terco_${type}`, data);
-  },
-
-  increment(type, max) {
-    const p = Terco.getProgress(type);
-    if (typeof p.count !== 'number') p.count = 0;
-    if (p.count < max) p.count++;
-    if (p.count >= max) {
-      p.completed = true;
-      p.date = new Date().toISOString();
-      Terco.markTercoDay(type);
-    }
-    Terco.saveProgress(type, p);
-    return p;
-  },
-
-  reset(type) {
-    Terco.saveProgress(type, { count: 0, completed: false, date: null });
-  },
-
-  // calendar functions used by exportData in your settings page
-  getTercoCalendar() {
-    return Storage.get('terco_calendar', {});
-  },
-
-  markTercoDay(type) {
-    const today = getTodayDate();
-    const cal = Storage.get('terco_calendar', {});
-    if (!cal[today]) cal[today] = [];
-    if (!cal[today].includes(type)) cal[today].push(type);
-    Storage.set('terco_calendar', cal);
-  }
-};
-
-/* =========================
-   ANOTAÇÕES (compatibilidade)
-   ========================= */
+/* ---------------------------
+   ANOTAÇÕES
+--------------------------- */
 const Anotacoes = {
-  getAnotacoes() {
-    return Storage.get('anotacoes_data', []);
-  },
-
-  get: () => Anotacoes.getAnotacoes(), // alias
-
-  save(list) {
-    Storage.set('anotacoes_data', list);
-  },
-
+  getAnotacoes() { return Storage.get('anotacoes_data', []); },
   add(titulo, conteudo) {
-    const arr = Anotacoes.getAnotacoes();
-    const item = { id: Date.now(), titulo: titulo || 'Sem título', conteudo: conteudo || '', date: new Date().toISOString() };
-    arr.push(item);
-    Anotacoes.save(arr);
-    return item;
+    const arr = this.getAnotacoes();
+    const item = { id: Date.now(), titulo: titulo||'Sem título', conteudo:conteudo||'', date: new Date().toISOString() };
+    arr.push(item); Storage.set('anotacoes_data',arr); return item;
   },
-
-  delete(id) {
-    const arr = Anotacoes.getAnotacoes().filter(a => a.id !== id);
-    Anotacoes.save(arr);
+  update(id,titulo,conteudo){
+    const arr=this.getAnotacoes(); const item=arr.find(x=>x.id===id);
+    if(!item) return false; item.titulo=titulo||item.titulo; item.conteudo=conteudo||item.conteudo;
+    Storage.set('anotacoes_data',arr); return true;
   },
-
-  update(id, titulo, conteudo) {
-    const arr = Anotacoes.getAnotacoes();
-    const item = arr.find(x => x.id === id);
-    if (!item) return false;
-    item.titulo = titulo || item.titulo;
-    item.conteudo = conteudo || item.conteudo;
-    Anotacoes.save(arr);
-    return true;
+  delete(id){
+    const arr=this.getAnotacoes().filter(a=>a.id!==id);
+    Storage.set('anotacoes_data',arr);
   }
 };
 
-/* =========================
-   CONFISSÃO (compatibilidade)
-   ========================= */
-const Confissao = {
-  saveConfissao(conf) {
-    const arr = Storage.get('confissao_data', []);
-    arr.push({ id: Date.now(), data: new Date().toISOString(), ...conf });
-    Storage.set('confissao_data', arr);
-  },
+/* ---------------------------
+   UTILITÁRIOS
+--------------------------- */
+function goBack(){ window.history.back(); }
 
-  getConfissoes() {
-    return Storage.get('confissao_data', []);
-  },
+let editingId = null;
 
-  getConfessions: () => Confissao.getConfissoes(), // alias
-  getConfissoesAlias: () => Confissao.getConfissoes() // extra alias used somewhere
-};
+function init(){ showPinScreen(); }
 
-/* =========================
-   LECTIO DIVINA (compatibilidade)
-   ========================= */
-const LectioDivina = {
-  get() {
-    return Storage.get('lectio_data', { leitura: '', meditacao: '', oracao: '', contemplacao: '' });
-  },
+function showPinScreen(){
+  document.getElementById('pin-screen').classList.remove('hidden');
+  document.getElementById('anotacoes-screen').classList.add('hidden');
+  document.getElementById('form-screen').classList.add('hidden');
+}
 
-  save(data) {
-    Storage.set('lectio_data', data);
-  }
-};
+function handlePinInput(e,index){
+  const inputs=document.querySelectorAll('.pin-input input');
+  const val=e.target.value;
+  if(val.length>1) e.target.value=val.slice(-1);
+  if(val && index<3) inputs[index+1].focus();
+  if(e.key==='Backspace' && !val && index>0) inputs[index-1].focus();
+  if(e.key==='Enter') verifyPin();
+}
 
-/* =========================
-   API – LITURGIA (via proxy.php ou fallback)
-   ========================= */
-async function getLiturgia(day, month, year) {
-  try {
-    // usa proxy.php como proposto
-    const raw = `https://liturgia.acolitos.com.br/api/liturgia?dia=${day}&mes=${month}&ano=${year}`;
-    const url = `proxy.php?url=${encodeURIComponent(raw)}`;
-
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('Bad response from proxy');
-
-    const data = await resp.json();
-    // retorno robusto
-    return {
-      titulo: data.titulo || "Liturgia do Dia",
-      leituras: data.leituras || data.leituras_plain || "(indisponível)",
-      evangelho: data.evangelho || data.evangelho_plain || "(indisponível)"
-    };
-  } catch (e) {
-    console.warn('getLiturgia fallback', e);
-    return {
-      titulo: "Liturgia Offline",
-      leituras: "(offline) Leia um trecho bíblico salvo.",
-      evangelho: "(offline) Evangelho não disponível."
-    };
+function verifyPin(){
+  const inputs=document.querySelectorAll('.pin-input input');
+  const pin=Array.from(inputs).map(i=>i.value).join('');
+  if(pin.length!==4){ alert('Digite um PIN de 4 dígitos'); return; }
+  if(PIN.verify(pin)){ showAnotacoesScreen(); } else {
+    alert('PIN incorreto'); inputs.forEach(i=>i.value=''); inputs[0].focus();
   }
 }
 
-/* =========================
-   DEBUG / Inicialização
-   ========================= */
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('app.js carregado — Storage e PIN prontos.');
-  // Garantir que o PIN padrão esteja salvo (opcional)
-  // só inicializa se não existir ainda
-  const existing = Storage.get('app_pin', null);
-  if (!existing) {
-    // não sobrescreve se já existir algo (por segurança)
-    Storage.set('app_pin', '1234');
-  }
-});
+function showAnotacoesScreen(){
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('anotacoes-screen').classList.remove('hidden');
+  document.getElementById('form-screen').classList.add('hidden');
+  loadAnotacoes();
+}
+
+function loadAnotacoes(){
+  const list=document.getElementById('anotacoes-list');
+  const notas=Anotacoes.getAnotacoes();
+  list.innerHTML='';
+  if(notas.length===0){ list.innerHTML='<p style="text-align:center;color:#555;">Nenhuma anotação ainda</p>'; return; }
+  notas.forEach(n=>{
+    const div=document.createElement('div'); div.className='item';
+    div.innerHTML=`
+      <div>
+        <strong>${n.titulo}</strong><br>
+        <small>${new Date(n.date).toLocaleDateString('pt-BR')}</small>
+      </div>
+      <div>
+        <button onclick="editAnotacao(${n.id})">Editar</button>
+        <button onclick="deleteAnotacao(${n.id})">Excluir</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function showNewAnotacao(){
+  editingId=null;
+  document.getElementById('form-title').textContent='Nova Anotação';
+  document.getElementById('anotacao-titulo').value='';
+  document.getElementById('anotacao-conteudo').value='';
+  document.getElementById('anotacoes-screen').classList.add('hidden');
+  document.getElementById('form-screen').classList.remove('hidden');
+  document.getElementById('anotacao-titulo').focus();
+}
+
+function editAnotacao(id){
+  const nota=Anotacoes.getAnotacoes().find(a=>a.id===id); if(!nota) return;
+  editingId=id;
+  document.getElementById('form-title').textContent='Editar Anotação';
+  document.getElementById('anotacao-titulo').value=nota.titulo;
+  document.getElementById('anotacao-conteudo').value=nota.conteudo;
+  document.getElementById('anotacoes-screen').classList.add('hidden');
+  document.getElementById('form-screen').classList.remove('hidden');
+}
+
+function saveAnotacao(){
+  const titulo=document.getElementById('anotacao-titulo').value.trim();
+  const conteudo=document.getElementById('anotacao-conteudo').value.trim();
+  if(!titulo || !conteudo){ alert('Preencha todos os campos'); return; }
+  if(editingId){ Anotacoes.update(editingId,titulo,conteudo); } else { Anotacoes.add(titulo,conteudo); }
+  cancelForm();
+}
+
+function deleteAnotacao(id){
+  if(confirm('Deseja excluir esta anotação?')){ Anotacoes.delete(id); loadAnotacoes(); }
+}
+
+function cancelForm(){
+  editingId=null;
+  document.getElementById('form-screen').classList.add('hidden');
+  document.getElementById('anotacoes-screen').classList.remove('hidden');
+  loadAnotacoes();
+}
+
+function logout(){ showPinScreen(); document.querySelectorAll('.pin-input input').forEach(i=>i.value=''); }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

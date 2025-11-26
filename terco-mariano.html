@@ -26,16 +26,15 @@
     .beads-container{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
     .bead{ display:inline-flex; align-items:center; justify-content:center; user-select:none; cursor:pointer; background:#fbfbfb; color:var(--icon); box-shadow:0 1px 3px rgba(0,0,0,0.04); }
     .bead.am{ width:34px; height:34px; border-radius:50%; font-weight:600 }       
-    .bead.pn{ width:44px; height:44px; border-radius:50%; font-weight:700 }       
+    .bead.pn{ width:44px; height:44px; border-radius:50%; font-weight:700 }
+    .bead.credo{ width:44px; height:44px; border-radius:50%; font-weight:700; font-size:1.2rem }
     .bead.filled{ background:var(--primary); color:#fff; box-shadow:0 6px 14px rgba(67,96,198,0.18) }
-    .cross{ width:44px; height:44px; display:inline-flex;align-items:center;justify-content:center;border-radius:6px;background:#fff;color:var(--icon); box-shadow:0 1px 3px rgba(0,0,0,0.04); font-weight:700; cursor:pointer }
-    .cross.filled{ background:var(--primary); color:#fff; }
     .progress-bar{height:8px;background:#eee;border-radius:999px;overflow:hidden;margin:8px 18px}
     .progress-fill{height:100%;width:0;background:var(--primary);transition:width .25s ease}
     .buttons{display:flex;gap:.6rem;justify-content:center;margin-top:8px;flex-wrap:wrap}
     .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:700}
     .btn-outline{background:transparent;border:1px solid #ddd;color:var(--text)}
-    @media (max-width:420px){ .bead.am{width:30px;height:30px} .bead.pn{width:38px;height:38px} .cross{width:38px;height:38px} .counter-display{font-size:1.15rem} }
+    @media (max-width:420px){ .bead.am{width:30px;height:30px} .bead.pn{width:38px;height:38px} .bead.credo{width:38px;height:38px} .counter-display{font-size:1.15rem} }
   </style>
 </head>
 <body>
@@ -62,10 +61,6 @@
     <div class="card counter" role="group" aria-labelledby="tercoStatus">
       <div id="counterDisplay" class="counter-display">0 / 0</div>
       <div class="small-muted" id="tercoStatus">Progresso do Terço Mariano</div>
-
-      <div style="display:flex;justify-content:center;gap:8px;margin:12px 0">
-        <div id="credoCross" class="cross" title="Creio" role="button" aria-label="Ir para o Credo">✝</div>
-      </div>
 
       <div id="beadsContainer" class="beads-container" aria-hidden="false"></div>
 
@@ -149,7 +144,7 @@
   function buildBeadSteps(){
     const arr = [];
     for(let i=0;i<SEQUENCE.length;i++){
-      if(SEQUENCE[i] === 'pn' || SEQUENCE[i] === 'am') arr.push({ stepIndex: i, type: SEQUENCE[i] });
+      if(SEQUENCE[i] === 'pn' || SEQUENCE[i] === 'am' || SEQUENCE[i] === 'credo') arr.push({ stepIndex: i, type: SEQUENCE[i] });
     }
     return arr;
   }
@@ -226,26 +221,31 @@
 
     let lastFilledGlobal = -1;
     for(let j=0;j<=state.stepIndex;j++){
-      if(SEQUENCE[j] === 'pn' || SEQUENCE[j] === 'am') lastFilledGlobal = j;
+      if(SEQUENCE[j] === 'pn' || SEQUENCE[j] === 'am' || SEQUENCE[j] === 'credo') lastFilledGlobal = j;
     }
 
     beadSteps.forEach((b, idx) => {
       const div = document.createElement('div');
-      div.className = 'bead ' + (b.type === 'pn' ? 'pn pai-nosso-bead' : 'am');
+      
+      if(b.type === 'credo'){
+        div.className = 'bead credo';
+        div.innerText = '✝';
+      } else if(b.type === 'pn'){
+        div.className = 'bead pn pai-nosso-bead';
+        div.innerText = 'P';
+      } else {
+        div.className = 'bead am';
+      }
+      
       if(b.stepIndex <= lastFilledGlobal) div.classList.add('filled');
-      div.title = `${b.type === 'pn' ? 'Pai-Nosso' : 'Ave-Maria'} — passo ${b.stepIndex + 1}`;
+      div.title = `${b.type === 'pn' ? 'Pai-Nosso' : b.type === 'credo' ? 'Creio' : 'Ave-Maria'} — passo ${b.stepIndex + 1}`;
       div.onclick = () => jumpTo(b.stepIndex);
-      if(b.type === 'pn') div.innerText = 'P';
       beadsContainer.appendChild(div);
     });
 
     const pct = Math.round(((state.stepIndex + 1) / SEQUENCE.length) * 100);
     document.getElementById('progressFill').style.width = pct + '%';
     document.getElementById('progressLabel').innerText = pct + '%';
-
-    const creedIdx = SEQUENCE.indexOf('credo');
-    const crossEl = document.getElementById('credoCross');
-    if(state.stepIndex > creedIdx) crossEl.classList.add('filled'); else crossEl.classList.remove('filled');
 
     misterioBox.setAttribute('aria-hidden', misterioBox.style.display === 'none' ? 'true' : 'false');
   }
@@ -306,10 +306,6 @@
     render();
     document.getElementById('btnNext').addEventListener('click', nextStep);
     document.getElementById('btnReset').addEventListener('click', resetTerco);
-    document.getElementById('credoCross').addEventListener('click', () => {
-      const idx = SEQUENCE.indexOf('credo');
-      if(idx >= 0) jumpTo(idx);
-    });
   });
   </script>
 </body>

@@ -1,47 +1,137 @@
-/* app.js - Terço + Calendário (Formato A: por dia, somando todos os terços do dia)
-   Tipos suportados: "mariano", "rosario", "misericordia"
+/* app.js - Final e completo
+   - Storage helper
+   - PIN (simples)
+   - Anotacoes (localStorage)
+   - App.Terco (calendar registre por dia, tipos: mariano, misericordia, rosario)
+   - App.Calendar helpers
+   - registrarTercoRezados(type) global
 */
 
-(function () {
-  const STORAGE_KEY_CALENDAR = 'terco_calendar_v2';
-
-  // Storage simples com try/catch
+(function(){
+  /* ---------------------------
+     STORAGE
+  --------------------------- */
   const Storage = {
-    set: (k, v) => {
-      try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+    set: (key, val) => {
+      try { localStorage.setItem(key, JSON.stringify(val)); return true; }
       catch (e) { console.error('Storage.set error', e); return false; }
     },
-    get: (k, def = null) => {
-      try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }
-      catch (e) { console.error('Storage.get error', e); return def; }
+    get: (key, def = null) => {
+      try {
+        const v = localStorage.getItem(key);
+        return v ? JSON.parse(v) : def;
+      } catch (e) {
+        console.error('Storage.get error', e);
+        return def;
+      }
     },
-    remove: (k) => {
-      try { localStorage.removeItem(k); return true; }
+    remove: (key) => {
+      try { localStorage.removeItem(key); return true; }
       catch (e) { console.error('Storage.remove error', e); return false; }
     }
   };
 
-  // Helpers de data
-  function todayISO() {
-    return new Date().toISOString().split('T')[0];
-  }
+  /* ---------------------------
+     PIN (simples)
+  --------------------------- */
+  const PIN = {
+    key: 'app_pin',
+    defaultPin: '1234',
+    getPin() {
+      const p = Storage.get(this.key, this.defaultPin) || this.defaultPin;
+      return String(p).slice(0,4);
+    },
+    setPin(pin) {
+      const s = String(pin).replace(/\D/g, '').slice(0,4);
+      Storage.set(this.key, s);
+    },
+    verify(pin) {
+      return String(pin) === this.getPin();
+    }
+  };
+  window.PIN = PIN;
 
-  function toISODate(d) {
-    if (!d) return null;
-    if (typeof d === 'string') return d.split('T')[0];
-    return new Date(d).toISOString().split('T')[0];
-  }
+  /* ---------------------------
+     Anotações (simples)
+  --------------------------- */
+  const Anotacoes = {
+    key: 'anotacoes_data',
+    getAnotacoes() {
+      return Storage.get(this.key, []);
+    },
+    add(titulo, conteudo) {
+      const arr = this.getAnotacoes();
+      const item = { id: Date.now(), titulo: titulo||'Sem título', conteudo: conteudo||'', date: new Date().toISOString() };
+      arr.push(item);
+      Storage.set(this.key, arr);
+      return item;
+    },
+    update(id, titulo, conteudo) {
+      const arr = this.getAnotacoes();
+      const idx = arr.findIndex(x => x.id === id);
+      if (idx === -1) return false;
+      arr[idx].titulo = titulo || arr[idx].titulo;
+      arr[idx].conteudo = conteudo || arr[idx].conteudo;
+      arr[idx].date = new Date().toISOString();
+      Storage.set(this.key, arr);
+      return true;
+    },
+    delete(id) {
+      const arr = this.getAnotacoes().filter(a => a.id !== id);
+      Storage.set(this.key, arr);
+    }
+  };
+  window.Anotacoes = Anotacoes;
 
-  // Objeto Terco responsável por registrar no calendário
+  /* ---------------------------
+     App namespace
+  --------------------------- */
+  window.App = window.App || {};
+
+  /* ---------------------------
+     Calendar helpers
+  --------------------------- */
+  const Calendar = {
+    getMonthName: (m) => {
+      const names = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      return names[m] || '';
+    },
+    getFirstDayOfMonth: (year, month) => {
+      // 0..6 (Dom..Sab)
+      return new Date(year, month, 1).getDay();
+    },
+    getDaysInMonth: (year, month) => {
+      return new Date(year, month + 1, 0).getDate();
+    }
+  };
+  window.App.Calendar = Calendar;
+
+  /* ---------------------------
+     Terço / Calendário (Formato A: por dia, somando)
+  --------------------------- */
+  const TERCO_STORAGE_KEY = 'terco_calendar_v3'; // versão para futuras mudanças
+
   const Terco = {
-    allowedTypes: ['mariano', 'rosario', 'misericordia'],
+    allowedTypes: ['mariano', 'misericordia', 'rosario'],
 
-    // retorna o objeto calendar: { "YYYY-MM-DD": { total: N, tipos: [ 'mariano', ...' ] } }
+    // retorna o calendário como objeto { "YYYY-MM-DD": { total: N, tipos: [...] } }
     getTercoCalendar() {
-      return Storage.get(STORAGE_KEY_CALENDAR, {});
+      return Storage.get(TERCO_STORAGE_KEY, {});
     },
 
-    // registra um terço do tipo 'type' no dia 'date' (ISO string YYYY-MM-DD). se date omitido usa hoje
+    // grava o objeto inteiro
+    saveTercoCalendar(obj) {
+      return Storage.set(TERCO_STORAGE_KEY, obj);
+    },
+
+    // normalize date to YYYY-MM-DD
+    _toISODate(d) {
+      if (!d) return (new Date()).toISOString().split('T')[0];
+      if (typeof d === 'string') return d.split('T')[0];
+      return new Date(d).toISOString().split('T')[0];
+    },
+
+    // registra um terço do tipo 'type' no dia 'date' (ISO YYYY-MM-DD). date optional => today
     record(type, date) {
       if (!type || typeof type !== 'string') {
         console.warn('Terco.record: tipo inválido', type);
@@ -53,84 +143,87 @@
         return false;
       }
 
-      const day = date ? toISODate(date) : todayISO();
+      const day = Terco._toISODate(date);
       const calendar = Terco.getTercoCalendar();
 
       if (!calendar[day]) {
         calendar[day] = { total: 0, tipos: [] };
       }
-
       calendar[day].total = (calendar[day].total || 0) + 1;
       calendar[day].tipos = calendar[day].tipos || [];
       calendar[day].tipos.push(type);
 
-      Storage.set(STORAGE_KEY_CALENDAR, calendar);
+      Terco.saveTercoCalendar(calendar);
       return true;
     },
 
-    // clear (apagar calendário completo)
+    // remove calendário inteiro
     clearCalendar() {
-      Storage.remove(STORAGE_KEY_CALENDAR);
+      Storage.remove(TERCO_STORAGE_KEY);
     },
 
-    // util: verificar se dia marcado
+    // retorna se dia possui registros
     isDayMarked(date) {
-      const d = toISODate(date);
-      const calendar = Terco.getTercoCalendar();
-      return !!(calendar[d] && calendar[d].total > 0);
+      const day = Terco._toISODate(date);
+      const cal = Terco.getTercoCalendar();
+      return !!(cal[day] && cal[day].total > 0);
     },
 
-    // retorna um rótulo legível para um tipo
+    // util: friendly name
     friendlyName(type) {
       if (!type) return type;
-      const map = {
+      const m = {
         mariano: 'Terço Mariano',
-        rosario: 'Rosário',
-        misericordia: 'Terço da Misericórdia'
+        misericordia: 'Terço da Misericórdia',
+        rosario: 'Rosário'
       };
-      return map[type] || type;
+      return m[type] || type;
     }
   };
 
-  // Expõe globalmente
-  window.Terco = Terco;
+  window.App.Terco = Terco;
 
-  // Função global conveniente (usada pelos terços)
-  window.registrarTercoRezados = function (type, date) {
+  // alias global para ser chamado pelos terços
+  window.registrarTercoRezados = function(type, date){
     try {
       return Terco.record(type, date);
     } catch (e) {
-      console.error('Erro registrarTercoRezados', e);
+      console.error('registrarTercoRezados error', e);
       return false;
     }
   };
 
-  /* ------------------------------
-     Calendar helpers
-     ------------------------------ */
-  const Calendar = {
-    getMonthName: (m) => {
-      const names = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-      return names[m] || '';
-    },
+  /* ---------------------------
+     Pequenos utilitários expostos globalmente
+  --------------------------- */
+  window.printTercoCalendar = function(){
+    console.log('Terco calendar:', Terco.getTercoCalendar());
+  };
 
-    getFirstDayOfMonth: (year, month) => {
-      // retorna 0..6 (Dom..Sab)
-      return new Date(year, month, 1).getDay();
-    },
+  // pequena função de goBack (usada nos headers)
+  function goBack() {
+    if (document.referrer && history.length > 1) history.back();
+    else window.location.href = 'home.html';
+  }
+  window.goBack = goBack;
 
-    getDaysInMonth: (year, month) => {
-      return new Date(year, month + 1, 0).getDate();
+  /* ---------------------------
+     Inicialização mínima
+     - garante chave padrão se não existir (não sobrescreve)
+  --------------------------- */
+  document.addEventListener('DOMContentLoaded', () => {
+    // garante estrutura inicial (não substitui se já existir)
+    try {
+      if (!localStorage.getItem(TERCO_STORAGE_KEY)) {
+        Storage.set(TERCO_STORAGE_KEY, {}); // vazio por padrão
+      }
+    } catch (e) {
+      // ignore
     }
-  };
-
-  window.App = window.App || {};
-  window.App.Calendar = Calendar;
-  window.App.Terco = Terco;
-
-  // Export a small debug method to print calendar to console
-  window.printTercoCalendar = function () {
-    console.log('Terço calendar:', Terco.getTercoCalendar());
-  };
+    // mantém retro-compatibilidade: se algum outro módulo espera App or Terco em window, já estão setados
+    window.App = window.App || {};
+    window.App.Terco = Terco;
+    window.App.Calendar = window.App.Calendar || Calendar;
+  });
 
 })();

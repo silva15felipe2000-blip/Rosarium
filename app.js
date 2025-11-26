@@ -467,3 +467,43 @@ fetch("conteudo/liturgia.html")
     const area = document.querySelector("#liturgia-container");
     if (area) area.innerHTML = html;
   });
+// ============================================
+// CALENDÁRIO DO TERÇO (DETALHES POR DIA)
+// ============================================
+
+// Retorna o calendário completo salvo
+function getTercoCalendar() {
+  return Storage.get("terco_calendar", {});
+}
+
+// Abre o popup com as informações do dia
+function openTercoDayDetails(date) {
+  const calendar = getTercoCalendar();
+  const rezados = calendar[date] || [];
+
+  const nomes = {
+    mariano: "Terço Mariano",
+    misericordia: "Terço da Misericórdia",
+    rosario: "Santo Rosário"
+  };
+
+  let html = "";
+
+  if (rezados.length === 0) {
+    html = "<p>Nenhuma oração registrada neste dia.</p>";
+  } else {
+    html = "<ul>";
+    rezados.forEach(t => {
+      html += `<li>${nomes[t]}</li>`;
+    });
+    html += "</ul>";
+  }
+
+  document.getElementById("calendar-details-content").innerHTML = html;
+  document.getElementById("calendar-details").classList.remove("hidden");
+}
+
+// Fechar popup
+function closeTercoDayDetails() {
+  document.getElementById("calendar-details").classList.add("hidden");
+}

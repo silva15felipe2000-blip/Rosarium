@@ -28,13 +28,14 @@
     .bead.am{ width:34px; height:34px; border-radius:50%; font-weight:600 }       
     .bead.pn{ width:44px; height:44px; border-radius:50%; font-weight:700 }
     .bead.credo{ width:44px; height:44px; border-radius:50%; font-weight:700; font-size:1.2rem }
+    .bead.salve{ width:44px; height:44px; border-radius:50%; font-weight:700; font-size:1.1rem }
     .bead.filled{ background:var(--primary); color:#fff; box-shadow:0 6px 14px rgba(67,96,198,0.18) }
-    .progress-bar{height:8px;background:#eee;border-radius:999px;overflow:hidden;margin:8px 18px}
+    .progress-bar{height:8px;background:#eee;border-radius:999px;overflow:hidden;margin:12px 0}
     .progress-fill{height:100%;width:0;background:var(--primary);transition:width .25s ease}
     .buttons{display:flex;gap:.6rem;justify-content:center;margin-top:8px;flex-wrap:wrap}
     .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:700}
     .btn-outline{background:transparent;border:1px solid #ddd;color:var(--text)}
-    @media (max-width:420px){ .bead.am{width:30px;height:30px} .bead.pn{width:38px;height:38px} .bead.credo{width:38px;height:38px} .counter-display{font-size:1.15rem} }
+    @media (max-width:420px){ .bead.am{width:30px;height:30px} .bead.pn{width:38px;height:38px} .bead.credo{width:38px;height:38px} .bead.salve{width:38px;height:38px} .counter-display{font-size:1.15rem} }
   </style>
 </head>
 <body>
@@ -67,7 +68,7 @@
       <div class="progress-bar" aria-hidden="false">
         <div id="progressFill" class="progress-fill" style="width:0%"></div>
       </div>
-      <div id="progressLabel" class="small-muted" style="margin-top:6px">0%</div>
+      <div id="progressLabel" class="small-muted" style="text-align:center;margin-top:6px">0%</div>
 
       <div class="buttons">
         <button class="btn" id="btnNext" aria-label="Próxima oração">+ Próxima</button>
@@ -80,22 +81,46 @@
   <script src="app.js"></script>
 
   <script>
-  /* Terço Mariano — baseado no seu código anterior, somente com a chamada de registro ao final. */
+  /* Terço Mariano — com orações completas, mistérios completos e bolinhas de Creio e Salve Rainha */
 
   const ORACOES = {
     sinal_da_cruz: "Em nome do Pai, do Filho e do Espírito Santo. Amém.",
-    credo: "Creio em Deus Pai todo-poderoso, criador do céu e da terra; ... Amém.",
-    pai_nosso: "Pai nosso, que estais nos céus... Amém.",
-    ave_maria: "Ave Maria, cheia de graça... Amém.",
-    gloria: "Glória ao Pai, e ao Filho, e ao Espírito Santo. Amém.",
-    salve_rainha: "Salve Rainha, Mãe de Misericórdia... Amém."
+    credo: "Creio em Deus Pai todo-poderoso, criador do céu e da terra; e em Jesus Cristo, seu único Filho, nosso Senhor; que foi concebido pelo poder do Espírito Santo; nasceu da Virgem Maria; padeceu sob Pôncio Pilatos, foi crucificado, morto e sepultado; desceu à mansão dos mortos; ressuscitou ao terceiro dia; subiu aos céus; está sentado à direita de Deus Pai todo-poderoso; de onde há de vir a julgar os vivos e os mortos. Creio no Espírito Santo; na santa Igreja Católica; na comunhão dos santos; na remissão dos pecados; na ressurreição da carne; na vida eterna. Amém.",
+    pai_nosso: "Pai nosso, que estais nos céus, santificado seja o vosso nome, venha a nós o vosso reino, seja feita a vossa vontade, assim na terra como no céu. O pão nosso de cada dia nos dai hoje, perdoai-nos as nossas dívidas, assim como nós perdoamos aos nossos devedores, e não nos deixeis cair em tentação, mas livrai-nos do mal. Amém.",
+    ave_maria: "Ave Maria, cheia de graça, o Senhor é convosco, bendita sois vós entre as mulheres, e bendito é o fruto do vosso ventre, Jesus. Santa Maria, Mãe de Deus, rogai por nós pecadores, agora e na hora da nossa morte. Amém.",
+    gloria: "Glória ao Pai, e ao Filho, e ao Espírito Santo. Como era no princípio, agora e sempre, por todos os séculos dos séculos. Amém.",
+    salve_rainha: "Salve Rainha, Mãe de Misericórdia, vida, doçura e esperança nossa, salve! A vós clamamos, exilados filhos de Eva; a vós suspiramos, gemendo e chorando neste vale de lágrimas. Eia, pois, Advogada nossa, esses vossos olhos misericordiosos a nós volvei; e depois deste desterro, mostrai-nos Jesus, bendito fruto do vosso ventre. Ó clemente, ó piedosa, ó doce Virgem Maria. Amém."
   };
 
   const MISTERIOS = {
-    gozosos: [ "1º Mistério Gozoso — A Anunciação", "2º ...", "3º ...", "4º ...", "5º ..." ],
-    luminosos: [ "1º ...", "2º ...", "3º ...", "4º ...", "5º ..." ],
-    dolorosos: [ "1º ...", "2º ...", "3º ...", "4º ...", "5º ..." ],
-    gloriosos: [ "1º ...", "2º ...", "3º ...", "4º ...", "5º ..." ]
+    gozosos: [
+      "1º Mistério Gozoso — A Anunciação do Anjo Gabriel à Virgem Maria",
+      "2º Mistério Gozoso — A Visitação de Maria a sua prima Isabel",
+      "3º Mistério Gozoso — O Nascimento de Nosso Senhor Jesus Cristo",
+      "4º Mistério Gozoso — A Apresentação de Jesus no Templo",
+      "5º Mistério Gozoso — O Encontro de Jesus no Templo"
+    ],
+    luminosos: [
+      "1º Mistério Luminoso — O Batismo de Jesus no Rio Jordão",
+      "2º Mistério Luminoso — A Auto-revelação de Jesus nas Bodas de Caná",
+      "3º Mistério Luminoso — O Anúncio do Reino de Deus",
+      "4º Mistério Luminoso — A Transfiguração de Jesus",
+      "5º Mistério Luminoso — A Instituição da Eucaristia"
+    ],
+    dolorosos: [
+      "1º Mistério Doloroso — A Agonia de Jesus no Horto",
+      "2º Mistério Doloroso — A Flagelação de Jesus",
+      "3º Mistério Doloroso — A Coroação de Espinhos",
+      "4º Mistério Doloroso — Jesus Carregando a Cruz",
+      "5º Mistério Doloroso — A Crucificação e Morte de Jesus"
+    ],
+    gloriosos: [
+      "1º Mistério Glorioso — A Ressurreição de Jesus",
+      "2º Mistério Glorioso — A Ascensão de Jesus aos Céus",
+      "3º Mistério Glorioso — A Descida do Espírito Santo",
+      "4º Mistério Glorioso — A Assunção de Maria aos Céus",
+      "5º Mistério Glorioso — A Coroação de Maria Rainha do Céu e da Terra"
+    ]
   };
 
   const SEQUENCE = (function(){
@@ -144,7 +169,9 @@
   function buildBeadSteps(){
     const arr = [];
     for(let i=0;i<SEQUENCE.length;i++){
-      if(SEQUENCE[i] === 'pn' || SEQUENCE[i] === 'am' || SEQUENCE[i] === 'credo') arr.push({ stepIndex: i, type: SEQUENCE[i] });
+      if(SEQUENCE[i] === 'pn' || SEQUENCE[i] === 'am' || SEQUENCE[i] === 'credo' || SEQUENCE[i] === 'salve') {
+        arr.push({ stepIndex: i, type: SEQUENCE[i] });
+      }
     }
     return arr;
   }
@@ -187,8 +214,8 @@
         const mIndex = computeMysteryIndexForStep(state.stepIndex);
         if(mIndex >= 0 && mIndex < 5){
           misterioBox.style.display = 'block';
-          misterioTitle.innerText = `${info.label} — ${mIndex + 1}º`;
-          misterioText.innerText = MISTERIOS[info.key][mIndex];
+          misterioTitle.innerText = MISTERIOS[info.key][mIndex];
+          misterioText.innerText = '';
         }
         prayerMetaEl.innerText = `Pai-Nosso da dezena ${computeMysteryIndexForStep(state.stepIndex) + 1}`;
       } else {
@@ -221,7 +248,9 @@
 
     let lastFilledGlobal = -1;
     for(let j=0;j<=state.stepIndex;j++){
-      if(SEQUENCE[j] === 'pn' || SEQUENCE[j] === 'am' || SEQUENCE[j] === 'credo') lastFilledGlobal = j;
+      if(SEQUENCE[j] === 'pn' || SEQUENCE[j] === 'am' || SEQUENCE[j] === 'credo' || SEQUENCE[j] === 'salve') {
+        lastFilledGlobal = j;
+      }
     }
 
     beadSteps.forEach((b, idx) => {
@@ -230,6 +259,9 @@
       if(b.type === 'credo'){
         div.className = 'bead credo';
         div.innerText = '✝';
+      } else if(b.type === 'salve'){
+        div.className = 'bead salve';
+        div.innerText = 'S';
       } else if(b.type === 'pn'){
         div.className = 'bead pn pai-nosso-bead';
         div.innerText = 'P';
@@ -238,7 +270,7 @@
       }
       
       if(b.stepIndex <= lastFilledGlobal) div.classList.add('filled');
-      div.title = `${b.type === 'pn' ? 'Pai-Nosso' : b.type === 'credo' ? 'Creio' : 'Ave-Maria'} — passo ${b.stepIndex + 1}`;
+      div.title = `${b.type === 'pn' ? 'Pai-Nosso' : b.type === 'credo' ? 'Creio' : b.type === 'salve' ? 'Salve Rainha' : 'Ave-Maria'} — passo ${b.stepIndex + 1}`;
       div.onclick = () => jumpTo(b.stepIndex);
       beadsContainer.appendChild(div);
     });

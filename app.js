@@ -452,3 +452,18 @@ async function getLiturgia(day, month, year) {
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Rosarium carregado com sucesso');
 });
+// --- Carregar conteúdo em Bíblia ---
+fetch("conteudo/biblia.html")
+  .then(response => response.text())
+  .then(html => {
+    const area = document.querySelector("#biblia-container");
+    if (area) area.innerHTML = html;
+  });
+
+// --- Carregar conteúdo em Liturgia ---
+fetch("conteudo/liturgia.html")
+  .then(response => response.text())
+  .then(html => {
+    const area = document.querySelector("#liturgia-container");
+    if (area) area.innerHTML = html;
+  });

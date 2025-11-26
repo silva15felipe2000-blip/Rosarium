@@ -1895,7 +1895,105 @@ textarea.input {
   </script>
 </body>
 </html>
+/* CORREÇÃO DO CALENDÁRIO – SEM ALTERAR O VISUAL */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr) !important;
+  gap: 6px !important;
+  width: 100%;
+  padding: 0 2px;
+  box-sizing: border-box;
+}
 
+.calendar-day,
+.calendar-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Corrige vazamento lateral no tema escuro */
+.page-content,
+.page-container {
+  overflow-x: hidden !important;
+}
+
+/* Botões de navegação corrigidos */
+.calendar-nav button {
+  background: #2e2e2e;
+  padding: 8px 14px;
+  color: white;
+  border-radius: 10px;
+  border: none;
+}
+/* ---- Estilo do calendário ---- */
+
+.calendar-container {
+    background: var(--card-bg, #0f0f0f);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid #222;
+}
+
+.calendar-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.calendar-nav {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.calendar-nav button {
+    background: #222;
+    color: #ddd;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.calendar-day,
+.calendar-empty {
+    background: #111;
+    color: #ccc;
+    padding: 0.75rem 0;
+    text-align: center;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+
+/* Dias marcados (terço rezado) */
+.calendar-day.marked {
+    background: #4b0000 !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(120,0,0,0.5);
+}
+
+/* Dia atual */
+.calendar-day.today {
+    border: 2px solid #800000;
+    font-weight: bold;
+}
 /* ============================================
    FIM DO CSS
    ============================================ */

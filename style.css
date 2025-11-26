@@ -1994,6 +1994,14 @@ textarea.input {
     border: 2px solid #800000;
     font-weight: bold;
 }
+.pai-nosso-bead {
+  font-weight: bold;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--foreground, #fff);
+}
 /* ============================================
    FIM DO CSS
    ============================================ */

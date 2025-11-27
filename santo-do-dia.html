@@ -6,6 +6,7 @@
   <title>Santo do Dia - Rosarium</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <!-- Header -->
   <header class="header">
@@ -14,7 +15,8 @@
       <div class="header-title">
         <div class="header-logo">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m6.364 1.636l-.707-.707M21 12h-1m1.364 6.364l-.707.707M12 21v1m-6.364-1.636l.707.707M3 12h1M4.636 4.636l.707.707" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M12 3v1m6.364 1.636l-.707-.707M21 12h-1m1.364 6.364l-.707.707M12 21v1m-6.364-1.636l.707.707M3 12h1M4.636 4.636l.707.707"/>
           </svg>
         </div>
         <span>Santo do Dia</span>
@@ -22,82 +24,87 @@
     </div>
   </header>
 
-  <!-- Conteúdo -->
   <div class="page-container">
     <div class="page-content container-md">
+
       <h1 class="page-title">Santo do Dia</h1>
 
-      <!-- Card do Santo -->
-      <div class="card" style="margin-bottom: 2rem; text-align: center;">
-        <div style="width: 150px; height: 150px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 50%; margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center;">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 80px; height: 80px; color: white;">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m6.364 1.636l-.707-.707M21 12h-1m1.364 6.364l-.707.707M12 21v1m-6.364-1.636l.707.707M3 12h1M4.636 4.636l.707.707" />
-          </svg>
-        </div>
-        
-        <h2 class="card-title" id="santo-nome">Santo do Dia</h2>
-        <p class="card-description" id="santo-data">Data</p>
-        
-        <div class="card-content" style="text-align: left; margin-top: 1.5rem;">
-          <h3 style="margin-bottom: 0.5rem; font-weight: 600;">Oração:</h3>
-          <p id="santo-oracao" style="font-style: italic;">Roga por nós, santo do dia.</p>
-        </div>
+      <!-- Card principal -->
+      <div id="santo-container"></div>
+
+      <!-- Lista do mês -->
+      <div class="card">
+        <h3 class="card-title">Santos deste Mês</h3>
+        <div id="santos-list" class="items-list"></div>
       </div>
 
-      <!-- Histórico do Mês -->
-      <div class="card">
-        <h3 class="card-title">Santos do Mês</h3>
-        <div class="items-list" id="santos-list">
-          <!-- Gerado por JavaScript -->
-        </div>
-      </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="js/santo-do-dia.js"></script>
+
   <script>
-    function init() {
-      const santo = App.SantoDoDia.getSantoDoDia();
-      const hoje = new Date();
-      
-      document.getElementById('santo-nome').textContent = santo.nome;
-      document.getElementById('santo-data').textContent = hoje.toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      document.getElementById('santo-oracao').textContent = santo.oração;
-      
-      loadSantosDoDia();
-    }
+    async function init() {
+      const container = document.getElementById("santo-container");
+      const santos = await SantoDoDia.getSantoDoDia();
 
-    function loadSantosDoDia() {
-      const santos = App.SantoDoDia.getSantosDoMes();
-      const list = document.getElementById('santos-list');
-      list.innerHTML = '';
-      
-      santos.forEach(santo => {
-        const item = document.createElement('div');
-        item.className = 'item';
-        
-        const hoje = new Date();
-        const isToday = santo.dia === hoje.getDate();
-        
-        item.innerHTML = `
-          <div class="item-content">
-            <div class="item-title" ${isToday ? 'style="color: var(--primary); font-weight: 700;"' : ''}>${santo.dia} - ${santo.nome}</div>
-            <div class="item-description">${santo.oração}</div>
+      // garante array
+      const lista = Array.isArray(santos) ? santos : [santos];
+
+      const hoje = new Date().toLocaleDateString("pt-BR", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric"
+      });
+
+      container.innerHTML = "";
+
+      lista.forEach(santo => {
+        container.innerHTML += `
+          <div class="card" style="margin-bottom: 2rem; text-align:center;">
+            <img src="img/santos/${santo.imagem}" 
+                 alt="${santo.nome}" 
+                 style="width:150px;height:150px;border-radius:50%;object-fit:cover;margin-bottom:1rem;">
+            
+            <h2 class="card-title">${santo.nome}</h2>
+            <p class="card-description">${hoje}</p>
+
+            <p style="margin-top:1rem;text-align:justify;">${santo.descricao}</p>
+
+            <h3 style="margin:1.2rem 0 0.4rem;">Oração</h3>
+            <p style="font-style:italic;">${santo.oracao}</p>
           </div>
-          ${isToday ? '<div style="padding: 0.5rem 1rem; background: var(--primary); color: white; border-radius: var(--radius); font-size: var(--font-size-sm); font-weight: 600;">Hoje</div>' : ''}
         `;
-        
-        list.appendChild(item);
+      });
+
+      loadSantosDoMes();
+    }
+
+    async function loadSantosDoMes() {
+      const list = document.getElementById("santos-list");
+      const dados = await SantoDoDia.getSantosDoMes();
+      const hoje = new Date().getDate();
+
+      list.innerHTML = "";
+
+      dados.forEach(santo => {
+        const isToday = santo.dia === hoje;
+
+        list.innerHTML += `
+          <div class="item" style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div class="item-title" style="${isToday ? "color:var(--primary);font-weight:700" : ""}">
+                ${santo.dia} — ${santo.nome}
+              </div>
+              <div class="item-description">${santo.oracao}</div>
+            </div>
+
+            ${isToday ? `<div style="background:var(--primary);color:white;padding:6px 10px;border-radius:6px;">Hoje</div>` : ""}
+          </div>
+        `;
       });
     }
 
-    // Inicializar
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener("DOMContentLoaded", init);
   </script>
+
 </body>
 </html>

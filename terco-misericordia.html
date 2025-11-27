@@ -19,267 +19,249 @@
   .beads{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
   .bead{display:inline-flex;align-items:center;justify-content:center;user-select:none;cursor:pointer;background:#fbfbfb;color:var(--icon);box-shadow:0 1px 3px rgba(0,0,0,0.04)}
   .bead.am{width:34px;height:34px;border-radius:50%;font-weight:600}
-  .bead.pn{width:44px;height:44px;border-radius:50%;font-weight:700}
-  .bead.credo{width:44px;height:44px;border-radius:50%;font-weight:700;font-size:1.2rem}
+  .bead.pn{width:44px;height:44px;border-radius:50%;font-weight:700;font-size:1.1rem}
+  .bead.credo{width:44px;height:44px;border-radius:50%;font-weight:700;font-size:1.3rem}
   .bead.filled{background:var(--primary);color:#fff;box-shadow:0 6px 14px rgba(67,96,198,0.18)}
   .progress{height:8px;background:#eee;border-radius:999px;overflow:hidden;margin:8px 18px}
   .progress > div{height:100%;width:0;background:var(--primary);transition:width .25s}
   .controls{display:flex;gap:.6rem;justify-content:center;margin-top:10px;flex-wrap:wrap}
   .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:700}
   .btn-outline{background:transparent;border:1px solid #ddd;color:var(--text);border-radius:10px}
-  @media (max-width:420px){ .bead.am{width:30px;height:30px} .bead.pn{width:38px;height:38px} .bead.credo{width:38px;height:38px} }
+  @media (max-width:420px){
+    .bead.am{width:30px;height:30px}
+    .bead.pn{width:38px;height:38px}
+    .bead.credo{width:38px;height:38px}
+  }
 </style>
 </head>
 <body>
-  <header class="header">
-    <button class="btn-back" onclick="history.back()">← Voltar</button>
-    <div style="font-weight:700;display:flex;align-items:center;gap:.6rem">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Terço da Misericórdia
+
+<header class="header">
+  <button class="btn-back" onclick="history.back()">← Voltar</button>
+  <div style="font-weight:700;display:flex;align-items:center;gap:.6rem">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Terço da Misericórdia
+  </div>
+</header>
+
+<main class="page">
+  <section class="card prayer-card" id="prayerCard">
+    <h3 id="prayerTitle">Oração atual</h3>
+    <p id="prayerText">Carregando...</p>
+    <div class="prayer-meta" id="prayerMeta"></div>
+  </section>
+
+  <section id="misterio" class="misterio">
+    <strong id="misterioTitulo"></strong>
+    <div id="misterioTexto"></div>
+  </section>
+
+  <section class="card">
+
+    <div id="beads" class="beads"></div>
+
+    <div class="progress"><div id="progFill"></div></div>
+    <div style="text-align:center;color:var(--muted);margin-top:6px" id="progLabel">0%</div>
+
+    <div class="controls">
+      <button id="nextBtn" class="btn">+ Próxima</button>
+      <button id="resetBtn" class="btn-outline">Resetar</button>
     </div>
-  </header>
 
-  <main class="page">
-    <section class="card prayer-card" id="prayerCard" aria-live="polite">
-      <h3 id="prayerTitle">Oração atual</h3>
-      <p id="prayerText">Carregando...</p>
-      <div class="prayer-meta" id="prayerMeta"></div>
-    </section>
-
-    <section id="misterio" class="misterio" aria-hidden="true">
-      <strong id="misterioTitulo"></strong>
-      <div id="misterioTexto"></div>
-    </section>
-
-    <section class="card">
-      <div style="display:flex;justify-content:center;margin-bottom:10px">
-        <div id="credoCross" class="bead credo" title="Ir para o Credo">✝</div>
-      </div>
-
-      <div id="beads" class="beads" aria-hidden="false"></div>
-
-      <div class="progress"><div id="progFill"></div></div>
-      <div style="text-align:center;color:var(--muted);margin-top:6px" id="progLabel">0%</div>
-
-      <div class="controls">
-        <button id="nextBtn" class="btn">+ Próxima</button>
-        <button id="resetBtn" class="btn-outline">Resetar</button>
-      </div>
-    </section>
-  </main>
+  </section>
+</main>
 
 <script src="app.js"></script>
 <script>
-/* ORAÇÕES */
+/* --------------------------------------------------
+   ORAÇÕES
+-------------------------------------------------- */
 const ORACOES = {
   sinal:'Em nome do Pai, do Filho e do Espírito Santo. Amém.',
-  credo:'Creio em Deus Pai todo-poderoso, criador do céu e da terra; e em Jesus Cristo, seu único Filho, nosso Senhor... Amém.',
   pai_nosso:'Pai nosso, que estais nos céus, santificado seja o vosso nome; venha a nós o vosso reino... Amém.',
   ave:'Ave Maria, cheia de graça, o Senhor é convosco... Amém.',
-  eterno_pai:'Eterno Pai, ofereço-vos o Corpo e o Sangue, a Alma e a Divindade de Nosso Senhor Jesus Cristo, em expiação pelos nossos pecados e pelos do mundo inteiro.',
+  credo:'Creio em Deus Pai todo-poderoso, criador do céu e da terra... Amém.',
+  eterno_pai:'Eterno Pai, ofereço-vos o Corpo e o Sangue, a Alma e a Divindade de Nosso Senhor Jesus Cristo...',
   pela_paixao:'Pela sua dolorosa Paixão, tende misericórdia de nós e do mundo inteiro.',
-  gloria:'Glória ao Pai, ao Filho e ao Espírito Santo. Amém.',
-  santo_deus:'Santo Deus, Santo Forte, Santo Imortal, tende misericórdia de nós e do mundo inteiro.',
-  o_sangue_e_agua:'Ó Sangue e Água, que brotastes do Coração de Jesus como fonte de misericórdia para nós, confio em Vós. Amém.'
+  gloria:'Glória ao Pai, ao Filho e ao Espírito Santo. Como era no princípio...',
+  santo_deus:'Santo Deus, Santo Forte, Santo Imortal...',
+  o_sangue_e_agua:'Ó Sangue e Água, que brotastes do Coração de Jesus...'
 };
 
-/* ORDEM CORRIGIDA DO TERÇO — versão oficial */
-const SEQ = (function(){
+/* --------------------------------------------------
+   SEQUÊNCIA CORRETA (ORDEM REAL)
+-------------------------------------------------- */
+const SEQ = (() => {
   const s = [];
-  s.push('sinal');     // 0
-  s.push('pn_init');   // 1 — Pai-Nosso inicial
-  s.push('am_init');   // 2 — Ave-Maria inicial
-  s.push('credo');     // 3 — Credo (CRUZ)  ✔ CORRIGIDO
 
-  for(let d=0; d<5; d++){
-    s.push('grande');            // "Eterno Pai"
-    for(let i=0;i<10;i++) s.push('pequena'); // 10 pequenas
-    s.push('gloria');            // Glória ao Pai
+  // Iniciais
+  s.push('sinal');       // sem bead
+  s.push('pn_init');     // bead PN
+  s.push('am_init');     // bead AM
+  s.push('credo_init');  // bead PN com cruz
+
+  // 5 dezenas
+  for (let d = 0; d < 5; d++) {
+    s.push('grande'); // Eterno Pai
+    for (let i = 0; i < 10; i++) s.push('pequena'); // 10 pequenas
+    s.push('gloria'); // sem bead
   }
+
   s.push('santo_deus');
   s.push('o_sangue');
+
   return s;
 })();
 
+/* --------------------------------------------------
+   STORAGE
+-------------------------------------------------- */
 const STORAGE = 'rosarium_misericordia_v2';
 let state = { stepIndex: 0 };
 
-/* BEADS GERADOS APENAS PARA CONTAS */
+function load(){ try{ const raw=localStorage.getItem(STORAGE); if(raw) state=JSON.parse(raw);}catch{} }
+function save(){ try{ localStorage.setItem(STORAGE, JSON.stringify(state)); }catch{} }
+
+/* --------------------------------------------------
+   BEADS
+-------------------------------------------------- */
 function buildBeads(){
   const arr = [];
-  for(let i=0;i<SEQ.length;i++){
-    if(SEQ[i] === 'pn_init' || SEQ[i] === 'am_init' ||
-       SEQ[i] === 'grande' || SEQ[i] === 'pequena') {
-      arr.push({step: i, type: SEQ[i]});
+
+  for (let i=0; i<SEQ.length; i++){
+    const t = SEQ[i];
+    if (t === 'pn_init' || t === 'am_init' || t === 'credo_init' || t === 'grande' || t === 'pequena'){
+      arr.push({step: i, type: t});
     }
   }
   return arr;
 }
 
-function load(){ try{ const raw = localStorage.getItem(STORAGE); if(raw) state = JSON.parse(raw);}catch(e){} }
-function save(){ try{ localStorage.setItem(STORAGE, JSON.stringify(state)); }catch(e){} }
-
+/* --------------------------------------------------
+   RENDER
+-------------------------------------------------- */
 function render(){
+
   const step = SEQ[state.stepIndex];
 
-  const titleEl = document.getElementById('prayerTitle');
-  const textEl  = document.getElementById('prayerText');
-  const metaEl  = document.getElementById('prayerMeta');
+  /* TÍTULOS */
+  const title = document.getElementById('prayerTitle');
+  const text  = document.getElementById('prayerText');
+  const meta  = document.getElementById('prayerMeta');
 
-  const misterio = document.getElementById('misterio');
-  const mTitulo  = document.getElementById('misterioTitulo');
-  const mTexto   = document.getElementById('misterioTexto');
+  const mister = document.getElementById('misterio');
+  const mTit   = document.getElementById('misterioTitulo');
+  const mTxt   = document.getElementById('misterioTexto');
 
-  misterio.style.display = 'none';
-  mTitulo.innerText = '';
-  mTexto.innerText  = '';
+  mister.style.display = 'none';
+  mTit.textContent = '';
+  mTxt.textContent = '';
 
-  if(step === 'sinal'){
-    titleEl.innerText = 'Sinal da Cruz';
-    textEl.innerText = ORACOES.sinal;
-    metaEl.innerText = '';
-  }
-  else if(step === 'pn_init'){
-    titleEl.innerText = 'Pai-Nosso Inicial';
-    textEl.innerText = ORACOES.pai_nosso;
-    metaEl.innerText = '';
-  }
-  else if(step === 'am_init'){
-    titleEl.innerText = 'Ave-Maria Inicial';
-    textEl.innerText = ORACOES.ave;
-    metaEl.innerText = '';
-  }
-  else if(step === 'credo'){
-    titleEl.innerText = 'Creio';
-    textEl.innerText = ORACOES.credo;
-    metaEl.innerText = '';
-  }
-  else if(step === 'grande'){
-    titleEl.innerText = 'Conta Grande';
-    textEl.innerText = ORACOES.eterno_pai;
-    metaEl.innerText = `Dezena ${computeDezenaIndex(state.stepIndex)+1} de 5`;
-
-    misterio.style.display = 'block';
-    mTitulo.innerText = 'Terço da Misericórdia — ' + (computeDezenaIndex(state.stepIndex)+1) + 'º Mistério';
-    mTexto.innerText  = 'Reze pedindo misericórdia pela humanidade.';
-  }
-  else if(step === 'pequena'){
-    titleEl.innerText = 'Conta Pequena';
-    textEl.innerText = ORACOES.pela_paixao;
-
-    metaEl.innerText = `Conta ${countPequenas(state.stepIndex)} da dezena ${computeDezenaIndex(state.stepIndex)+1}`;
-  }
-  else if(step === 'gloria'){
-    titleEl.innerText = 'Glória ao Pai';
-    textEl.innerText = ORACOES.gloria;
-    metaEl.innerText = '';
-  }
-  else if(step === 'santo_deus'){
-    titleEl.innerText = 'Santo Deus';
-    textEl.innerText = ORACOES.santo_deus;
-    metaEl.innerText = '';
-  }
-  else if(step === 'o_sangue'){
-    titleEl.innerText = 'Ó Sangue e Água';
-    textEl.innerText = ORACOES.o_sangue_e_agua;
-    metaEl.innerText = '';
+  switch(step){
+    case 'sinal':       title.textContent='Sinal da Cruz';         text.textContent=ORACOES.sinal; break;
+    case 'pn_init':     title.textContent='Pai-Nosso Inicial';     text.textContent=ORACOES.pai_nosso; break;
+    case 'am_init':     title.textContent='Ave-Maria Inicial';     text.textContent=ORACOES.ave; break;
+    case 'credo_init':  title.textContent='Creio';                 text.textContent=ORACOES.credo; break;
+    case 'grande':      title.textContent='Eterno Pai';            text.textContent=ORACOES.eterno_pai;
+                        mister.style.display='block';
+                        mTit.textContent='Dezena da Misericórdia';
+                        mTxt.textContent='Reze pedindo misericórdia pela humanidade.';
+                        break;
+    case 'pequena':     title.textContent='Pela Sua dolorosa Paixão'; text.textContent=ORACOES.pela_paixao; break;
+    case 'gloria':      title.textContent='Glória';                text.textContent=ORACOES.gloria; break;
+    case 'santo_deus':  title.textContent='Santo Deus';            text.textContent=ORACOES.santo_deus; break;
+    case 'o_sangue':    title.textContent='Ó Sangue e Água';       text.textContent=ORACOES.o_sangue_e_agua; break;
   }
 
-  // beads display
-  const container = document.getElementById('beads');
-  container.innerHTML = '';
+  /* BEADS */
+  const bd = document.getElementById('beads');
+  bd.innerHTML = '';
 
-  const beadSteps = buildBeads();
+  const beads = buildBeads();
+
   let lastFilled = -1;
-
-  for(let i=0;i<=state.stepIndex;i++){
-    if(['pn_init','am_init','grande','pequena'].includes(SEQ[i])) lastFilled = i;
+  for (let i=0; i<=state.stepIndex; i++){
+    const t = SEQ[i];
+    if (t === 'pn_init' || t === 'am_init' || t === 'credo_init' || t === 'grande' || t === 'pequena'){
+      lastFilled = i;
+    }
   }
 
-  beadSteps.forEach(b => {
+  beads.forEach(b => {
     const el = document.createElement('div');
-    el.className = 'bead ' + (b.type === 'grande' || b.type==='pn_init' ? 'pn' : 'am');
-    if(b.step <= lastFilled) el.classList.add('filled');
-    el.textContent = (b.type === 'grande' || b.type === 'pn_init' ? 'P' : '');
-    el.onclick = () => jumpTo(b.step);
-    container.appendChild(el);
+
+    // tipo visual
+    if (b.type === 'credo_init'){
+      el.className = 'bead credo';
+      el.textContent = '✝';
+    } else if (b.type === 'pn_init' || b.type === 'grande'){
+      el.className = 'bead pn';
+      el.textContent = 'P';
+    } else {
+      el.className = 'bead am';
+      el.textContent = '';
+    }
+
+    // preenchimento
+    if (b.step <= lastFilled) el.classList.add('filled');
+
+    el.onclick = ()=> jumpTo(b.step);
+
+    bd.appendChild(el);
   });
 
-  const creedIdx = SEQ.indexOf('credo');
-  const cross = document.getElementById('credoCross');
-  if(state.stepIndex >= creedIdx) cross.classList.add('filled');
-  else cross.classList.remove('filled');
-
-  const pct = Math.round(((state.stepIndex + 1) / SEQ.length) * 100);
+  /* PROGRESSO */
+  const pct = Math.round(((state.stepIndex+1) / SEQ.length)*100);
   document.getElementById('progFill').style.width = pct + '%';
-  document.getElementById('progLabel').innerText = pct + '%';
+  document.getElementById('progLabel').textContent = pct + '%';
 }
 
-function computeDezenaIndex(idx){
-  let count = 0;
-  for(let i=0;i<=idx;i++) if(SEQ[i]==='grande') count++;
-  return Math.max(0,count-1);
-}
-
-function countPequenas(idx){
-  let lastGrande = -1;
-  for(let i=0;i<=idx;i++) if(SEQ[i]==='grande') lastGrande = i;
-
-  let c = 0;
-  for(let i=lastGrande+1;i<=idx;i++)
-    if(SEQ[i]==='pequena') c++;
-
-  return c;
-}
-
-function onTercoComplete(){
-  try{
-    if(typeof registrarTercoRezados === 'function') registrarTercoRezados('misericordia');
-    else if(window.Terco?.record) window.Terco.record('misericordia');
-  }catch(e){}
-}
-
+/* --------------------------------------------------
+   AÇÕES
+-------------------------------------------------- */
 function next(){
-  if(state.stepIndex >= SEQ.length - 1){
+  if(state.stepIndex >= SEQ.length-1){
     alert('Terço completo — Glória a Deus!');
-    onTercoComplete();
 
-    setTimeout(()=>{
-      state = {stepIndex:0};
-      save();
-      render();
-    },700);
+    try {
+      if (typeof registrarTercoRezados === 'function'){
+        registrarTercoRezados('misericordia');
+      }
+    }catch(e){}
 
+    state.stepIndex = 0;
+    save();
+    render();
     return;
   }
+
   state.stepIndex++;
   save();
   render();
 }
 
 function reset(){
-  if(!confirm('Resetar Terço?')) return;
-  state = {stepIndex:0};
+  if(!confirm('Resetar Terço da Misericórdia?')) return;
+  state.stepIndex = 0;
   save();
   render();
 }
 
-function jumpTo(v){
-  if(v<0 || v>=SEQ.length) return;
-  state.stepIndex = v;
+function jumpTo(idx){
+  if(idx < 0 || idx >= SEQ.length) return;
+  state.stepIndex = idx;
   save();
   render();
 }
 
+/* --------------------------------------------------
+   START
+-------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   load();
   render();
   document.getElementById('nextBtn').onclick = next;
   document.getElementById('resetBtn').onclick = reset;
-  document.getElementById('credoCross').onclick = () => jumpTo(SEQ.indexOf('credo'));
 });
 </script>
 </body>

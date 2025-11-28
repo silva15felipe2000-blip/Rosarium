@@ -64,11 +64,15 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="biblia.js"></script>
   <script>
     let currentBook = null;
     let currentChapter = 1;
 
     async function initBooks() {
+      // Carrega os dados da Bíblia (se ainda não estiverem carregados)
+      await App.Biblia.loadData(); 
+      
       const booksList = document.getElementById('books-list');
       const livros = App.Biblia.getLivros();
       
@@ -116,15 +120,9 @@
     }
 
     async function loadChapter() {
-      const biblia = await App.Biblia.getBiblia(currentBook);
+      const chapterData = App.Biblia.getChapter(currentBook, currentChapter);
       
-      if (!biblia.chapters || biblia.chapters.length === 0) {
-        document.getElementById('verses-container').innerHTML = '<p>Capítulo não encontrado</p>';
-        return;
-      }
-      
-      const chapter = biblia.chapters[currentChapter - 1];
-      if (!chapter) {
+      if (!chapterData || !chapterData.versiculos || chapterData.versiculos.length === 0) {
         document.getElementById('verses-container').innerHTML = '<p>Capítulo não encontrado</p>';
         return;
       }
@@ -134,17 +132,15 @@
       const versesContainer = document.getElementById('verses-container');
       versesContainer.innerHTML = '';
       
-      if (chapter.verses) {
-        chapter.verses.forEach(verse => {
-          const verseElement = document.createElement('div');
-          verseElement.className = 'biblia-verse';
-          verseElement.innerHTML = `
-            <span class="biblia-verse-number">${verse.number}</span>
-            <span>${verse.text}</span>
-          `;
-          versesContainer.appendChild(verseElement);
-        });
-      }
+      chapterData.versiculos.forEach(verse => {
+        const verseElement = document.createElement('div');
+        verseElement.className = 'biblia-verse';
+        verseElement.innerHTML = `
+          <span class="biblia-verse-number">${verse.number}</span>
+          <span>${verse.text}</span>
+        `;
+        versesContainer.appendChild(verseElement);
+      });
     }
 
     function previousChapter() {

@@ -189,9 +189,9 @@
     friendlyName(type) {
       if (!type) return type;
       const m = {
-        mariano: 'Terço Mariano',
-        misericordia: 'Terço da Misericórdia',
-        rosario: 'Rosário'
+        Mariano: 'Terço Mariano',
+        Misericordia: 'Terço da Misericórdia',
+        Rosario: 'Rosário'
       };
       return m[type] || type;
     },

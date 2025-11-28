@@ -115,7 +115,7 @@
   const LEGACY_KEY = 'rosarium_calendar';       // legacy, date -> [ 'mariano', ... ]
 
   const Terco = {
-    allowedTypes: ['mariano', 'misericordia', 'rosario'],
+    allowedTypes: ['Mariano', 'Misericórdia', 'Rosário'],
 
     // retorna o calendário rico
     getTercoCalendar() {
